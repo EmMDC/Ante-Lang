@@ -1,0 +1,16 @@
+{
+  "name": "ante-lang",
+  "version": "1.0.0",
+  "description": "<img src=./docs/Ante_logo.jpeg width=\"500\" height=\"500\">",
+  "type": "module",
+  "main": "src/ante.js",
+  "scripts": {
+    "test": " c8 node --test test/**/*.test.js"
+  },
+  "keywords": [],
+  "author": "Emilio Martin Del Campo",
+  "license": "ISC",
+  "devDependencies": {
+    "c8": "^10.1.3"
+  }
+}
