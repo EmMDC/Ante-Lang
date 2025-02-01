@@ -1,0 +1,3 @@
+for hand i in range(3):
+    for hand j in range(2):
+        raise("i = {i}, j = {j}!");

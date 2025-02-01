@@ -1,0 +1,6 @@
+hand person = {
+    name: "Alice",
+    age: 25,
+    hobbies: ["reading", "cycling", "painting"]
+};
+raise("Person Info:");

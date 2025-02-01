@@ -1,0 +1,3 @@
+deal greet(name):
+    raise("Hello, {name}!");
+greet("Alice");

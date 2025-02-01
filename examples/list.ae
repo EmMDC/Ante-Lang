@@ -1,0 +1,2 @@
+hand hobbies = ["reading", "cycling", "painting"];
+raise("Hobbies:");
