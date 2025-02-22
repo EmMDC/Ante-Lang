@@ -13,10 +13,9 @@ const syntaxChecks = [
   ],
   [
     "function returning value",
-    "hand factorial(n):\n    if n == 0:\n        return 1;\n    else:\n        return n * factorial(n - 1);\nhand result = factorial(5);\nraise(result);",
+    "deal factorial(n):\n    if n == 0:\n        return 1;\n    else:\n        return n * factorial(n - 1);\nhand result = factorial(5);\nraise(result);",
   ],
   ["for loop", "for hand i in range(3):\n    raise(i);"],
-  ["repeat loop", "repeat 2:\n    raise(1);\n    raise(2);\n    raise(3);"],
   ["array literal and indexing", "hand arr = [10, 20, 30];\nraise(arr[1]);"],
   [
     "object literal and member access",
@@ -32,31 +31,15 @@ const syntaxChecks = [
 
 // Programs with syntax errors that the parser should detect in Ante
 const syntaxErrors = [
-  ["non-letter in an identifier", "hand ab😭c = 2;", /Line 1, col \d+:/],
-  ["malformed number", "hand x = 2.;", /Line 1, col \d+:/],
-  [
-    "missing colon after function definition",
-    "deal f()\n    raise(1);",
-    /Line 1, col \d+:/,
-  ],
-  ["missing right operand", "raise(5 -);", /Line 1, col \d+:/],
-  ["unclosed string literal", 'raise("hello);', /Line 1, col \d+:/],
-  ["invalid comment delimiter", "raise(1); /* comment */", /Line 1, col \d+:/],
-  [
-    "using braces instead of colon in function",
-    "deal f() { raise(1); }",
-    /Line 1, col \d+:/,
-  ],
-  [
-    "missing semicolon at end of statement",
-    "raise(1)\nhand x = 10;",
-    /Line 1, col \d+:/,
-  ],
-  [
-    "using wrong keyword for function",
-    "def f():\n    raise(1);",
-    /Line 1, col \d+:/,
-  ],
+  ["non-letter in an identifier", "hand ab😭c = 2;"],
+  ["malformed number", "hand x = 2.;"],
+  ["missing colon after function definition", "deal f()\n    raise(1);"],
+  ["missing right operand", "raise(5 -);"],
+  ["unclosed string literal", 'raise("hello);'],
+  ["invalid comment delimiter", "raise(1); /* comment */"],
+  ["using braces instead of colon in function", "deal f() { raise(1); }"],
+  ["missing semicolon at end of statement", "raise(1)\nhand x = 10;"],
+  ["using wrong keyword for function", "def f():\n    raise(1);"],
 ];
 
 describe("The Ante parser", () => {

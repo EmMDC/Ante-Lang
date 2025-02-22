@@ -1,0 +1,83 @@
+Ante {
+  Program     = Statement+
+
+  Statement   = VarDecl
+              | FunDecl
+              | Exp ("++" | "--") ";"                         --bump
+              | Exp "=" Exp ";"                               --assign
+              | Exp_call ";"                                  --call
+              | raise Exp ";"                                 --raise
+              | break ";"                                     --break
+              | return Exp ";"                                --return
+              | return ";"                                    --shortreturn
+              | IfStmt
+              | LoopStmt
+
+  VarDecl     = hand id "=" (Exp | Object) ";"
+  FunDecl     = deal id Params ":" Block
+  Params      = "(" ListOf<Param, ","> ")"
+  Param       = id
+  Block       =  Statement* 
+
+  IfStmt      = if Exp ":" Block else ":" Block                       --long
+              | if Exp Block else IfStmt                      --elsif
+              | if Exp Block                                  --short
+  LoopStmt    = while Exp Block                               --while
+              | repeat Exp Block                              --repeat
+              | for hand id in Exp ("..." | "..<") Exp Block --range
+              | for hand id in Exp ":" Block                     --collection
+              | for hand id in Exp_call Block                --funcCall
+
+  Exp         = Object
+              | Exp ("or" Exp)+                              --or
+              | Exp ("and" Exp)+                              --and
+              | Exp ("xor" Exp)+                               --bitxor
+              | Exp ("<="|"<"|"=="|"!="|">="|">") Exp       --compare
+              | Exp ("+" | "-") Exp                         --add
+              | Exp ("*"| "/" | "%") Exp                    --multiply
+              | Exp "**" Exp                                --power
+              | ("#" | "-" | "!") Exp                      --unary
+              | true
+              | false
+              | floatlit
+              | intlit
+              | Exp "(" ListOf<Exp, ","> ")"                --call
+              | Exp "[" Exp "]"                             --subscript
+              | Exp "." id                                  --member
+              | stringlit
+              | id
+              | "[" NonemptyListOf<Exp, ","> "]"           --arrayexp
+              | "(" Exp ")"                                 --parens
+
+  Object      = "{" ListOf<Member, ","> "}"
+  Member      = id ":" Exp
+
+  intlit      = digit+
+  floatlit    = digit+ "." digit+ (("E" | "e") ("+" | "-")? digit+)? 
+  stringlit   = "\"" char* "\""
+  char        = ~control ~"\\" ~"\"" any
+              | "\\" ("n" | "t" | "\"" | "\\")                --escape
+              | "\\u{" hex hex? hex? hex? hex? hex? "}"       --codepoint
+  control     = "\x00".."\x1f" | "\x80".."\x9f"
+  hex         = hexDigit
+
+  hand        = "hand" ~alnum
+  deal        = "deal" ~alnum
+  if          = "if" ~alnum
+  else        = "else" ~alnum
+  while       = "while" ~alnum
+  repeat      = "repeat" ~alnum
+  for         = "for" ~alnum
+  in          = "in" ~alnum
+  break       = "break" ~alnum
+  return      = "return" ~alnum
+  true        = "true" ~alnum
+  false       = "false" ~alnum
+  raise       = "raise" ~alnum
+  keyword     = hand | deal | if | else | while | repeat | for | in 
+              | break | return | true | false | raise
+  id          = ~keyword letter alnum*
+
+  space      += "//" (~"\n" any)*                             --comment
+              | "--" (~"--" any)* "--" "\n"                       --multilinecomment
+}
