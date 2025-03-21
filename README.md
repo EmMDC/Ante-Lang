@@ -195,3 +195,57 @@ a comment
 
 </td>
 </table>
+
+# Static Errors in analyzer.js
+
+- **Identifier Already Declared:**  
+  Thrown when attempting to declare an identifier that already exists.  
+  _Message:_ `"Identifier [identifier] already declared"`
+
+- **Identifier Not Declared:**  
+  Thrown when referencing an identifier that hasn’t been declared.  
+  _Message:_ `"Identifier [name] not declared"`
+
+- **Expected Function Call on a Function Identifier:**  
+  Thrown when a function call is attempted on an identifier that isn’t a function.  
+  _Message:_ `"Expected a function call on a function identifier"`
+
+- **Expected Boolean Value:**  
+  Thrown when a boolean value is expected (for example, in conditional expressions).  
+  _Message:_ `"Expected a boolean value"`
+
+- **Read-Only Variable Mutation:**  
+  Thrown when trying to modify a variable that is read only.  
+  _Message:_ `"[variable name] is read only"`
+
+- **Functions in an Invalid Context:**  
+  Thrown when a function appears in a context where it is not allowed.  
+  _Message:_ `"Functions cannot appear in this context"`
+
+- **Expression Type Mismatch:**  
+  Thrown when the types of two expressions do not match (with allowances for int/float conversion and any type).  
+  _Message:_ `"Expression type mismatch: [type1] vs [type2]"`
+
+- **Argument Count Mismatch:**  
+  Thrown when the number of arguments in a function call does not match the number expected by the function.  
+  _Message:_ `"[paramCount] argument(s) required but [argCount] passed"`
+
+- **Break Statement Outside Loop:**  
+  Thrown when a break statement is used outside the context of a loop.  
+  _Message:_ `"Break statement must be inside a loop"`
+
+- **Return Statement Outside Function:**  
+  Thrown when a return (or short return) statement is used outside of a function.  
+  _Message:_ `"Return statement must be inside a function"`
+
+- **Duplicate Parameter Name in Function Declaration:**  
+  Thrown when a function declaration contains more than one parameter with the same name.  
+  _Message:_ `"Duplicate parameter name: [name]"`
+
+- **TurnCall Parameter Count Error:**  
+  Thrown when a TurnCall operation does not receive exactly three parameters.  
+  _Message:_ `"TurnCall requires exactly three parameters"`
+
+- **TurnCall Step Size Error:**  
+  Thrown when the step value in a TurnCall operation is zero.  
+  _Message:_ `"Step size must be non-zero"`

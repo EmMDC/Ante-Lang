@@ -184,7 +184,3 @@ export const standardLibrary = Object.freeze({
 });
 
 // Extend JavaScript primitives with type properties for static typing
-String.prototype.type = stringType;
-Number.prototype.type = floatType;
-BigInt.prototype.type = intType;
-Boolean.prototype.type = booleanType;
