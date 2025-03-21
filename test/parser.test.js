@@ -5,6 +5,8 @@ import parse from "../src/parser.js";
 // Programs expected to be syntactically correct in Ante
 const syntaxChecks = [
   ["simplest program", "raise(0);"],
+  ["while statement", "while true:\n    raise(1);"],
+  ["if statement", "if x == 2:\n    raise(1);"],
   ["multiple statements", "raise(1);\nraise(2);\nhand x = 5;"],
   ["variable declarations", "hand e = 99 * 1;\nhand z = false;"],
   [
@@ -15,7 +17,7 @@ const syntaxChecks = [
     "function returning value",
     "deal factorial(n):\n    if n == 0:\n        return 1;\n    else:\n        return n * factorial(n - 1);\nhand result = factorial(5);\nraise(result);",
   ],
-  ["for loop", "for hand i in range(3):\n    raise(i);"],
+  ["for loop", "for i in turn(1, 3, 1):\n  raise(i);"],
   ["array literal and indexing", "hand arr = [10, 20, 30];\nraise(arr[1]);"],
   [
     "object literal and member access",
