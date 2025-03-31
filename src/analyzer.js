@@ -57,7 +57,14 @@ export default function analyze(match) {
     check(entity.type === core.booleanType, "Expected a boolean value", at);
   }
   function checkIsMutable(entity, at) {
-    check(entity.mutable, `${entity.name} is read only`, at);
+    if (!entity.mutable) {
+      if (entity.allIn) {
+        throw new Error(
+          "Can't back out of your all in!(redeclaration of allin(const) variable)"
+        );
+      }
+      throw new Error(`${entity.name} is read only`);
+    }
   }
   function checkNotFunction(entity, at) {
     if (entity && entity.kind === "Function") {
@@ -75,6 +82,14 @@ export default function analyze(match) {
       at
     );
   }
+  function checkIsNum(entity, at, customMsg) {
+    check(
+      entity.type === core.intType || entity.type === core.floatType,
+      customMsg || "Expected a float or int value",
+      at
+    );
+  }
+
   function promoteType(type1, type2) {
     if (type1 === type2) return type1;
     if (
@@ -111,11 +126,25 @@ export default function analyze(match) {
       Statement(stmt) {
         return stmt.analyze();
       },
+      //this if for hand variable declaration
       VarDecl(_hand, id, _eq, init, _semi) {
-        // Variable declaration: check for duplicate and add variable to context
         checkNotAlreadyDeclared(id, { at: id });
         const initializer = init.analyze();
         const variable = core.variable(id.sourceString, true, initializer.type);
+        context.add(id.sourceString, variable);
+        return core.variableDeclaration(variable, initializer);
+      },
+      //same as const variable declaration
+      AllInVarDecl(_all_in, id, _eq, init, _semi) {
+        checkNotAlreadyDeclared(id, { at: id });
+        const initializer = init.analyze();
+        const variable = core.variable(
+          id.sourceString,
+          false,
+          initializer.type
+        );
+        // Mark the variable as an "all in" variable.
+        variable.allIn = true;
         context.add(id.sourceString, variable);
         return core.variableDeclaration(variable, initializer);
       },
@@ -170,6 +199,7 @@ export default function analyze(match) {
       Statement_bump(exp, op, _semi) {
         // Increment or decrement operation on a mutable target
         const target = exp.analyze();
+        checkIsNum(target, op, `Cannot bump a variable of type ${target.type}`);
         checkIsMutable(target, op);
         return op.sourceString === "++"
           ? core.increment(target)
@@ -308,7 +338,6 @@ export default function analyze(match) {
       },
       Exp_add(exp, op, exp2) {
         const left = exp.analyze();
-
         const right = exp2.analyze();
         checkNotFunction(left, op);
         checkNotFunction(right, op);
@@ -341,6 +370,25 @@ export default function analyze(match) {
       Exp_call(exp, _open, list, _close) {
         const callee = exp.analyze();
         const args = list.asIteration().children.map((x) => x.analyze());
+
+        if (
+          callee.intrinsic &&
+          [
+            "sqrt",
+            "sin",
+            "cos",
+            "exp",
+            "ln",
+            "hypot",
+            "max",
+            "min",
+            "abs",
+          ].includes(callee.name)
+        ) {
+          args.forEach((arg) => {
+            checkIsNum(arg, _open);
+          });
+        }
         checkIsFunction(callee, _open);
         checkArgumentCount(args, callee, _open);
         return core.functionCall(callee, args);

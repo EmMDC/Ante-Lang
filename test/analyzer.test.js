@@ -12,6 +12,7 @@ import {
 
 const semanticChecks = [
   ["simplest program", "raise(0);"],
+  ["all in (const) variable declaration", "all in x = 1; hand y = 2 * x;"],
   ["adding floats to integers", "raise(1 + 2.2);\n  raise(1.1 + 2);"],
   [
     "factorial function",
@@ -19,6 +20,7 @@ const semanticChecks = [
   ],
   ["arithmetic", "hand x = 1; raise(2 * 3 + 5 ** -3 / 2 - 5 % 8);"],
   ["nested arrays", "hand x = [1, [2, 3], 4];"],
+  ["negation", "hand x = false;\nif !x:\n  raise(1);"],
   ["concatation", 'raise("hello" + ", " + "world");'],
   ["variables can be printed", "hand x = 1;\nraise(x);"],
   ["initialize variable with empty array", "hand x = [];"],
@@ -42,6 +44,7 @@ const semanticChecks = [
     "hand x = 10;\nif x > 5:\n  x = x - 1;\nelse:\n x = x + 1;",
   ],
   ["assign to array element", "hand a = [1,2,3]; a[1] = 100;"],
+  ["subscripted string", 'hand x = "hello";\nraise(x[0]);'],
   [
     "else if statement",
     "hand x = 10;\nif x > 5:\n  x = x - 1;\nelse if x < 2:\n x = x + 1;",
@@ -74,6 +77,16 @@ const semanticErrors = [
     "function call with wrong number of arguments",
     "raise(sin(1, 2));",
     /1 argument\(s\) required but 2 passed/,
+  ],
+  [
+    "incremmenting a string",
+    'hand x = "hello"; x++;',
+    /Cannot bump a variable of type string/,
+  ],
+  [
+    "redeclaring all in variable",
+    "all in x = 1;\nx = 2;",
+    /Can't back out of your all in!\s*\(redeclaration of allin\(const\) variable\)/,
   ],
   [
     "adding impossible types",

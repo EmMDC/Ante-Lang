@@ -2,6 +2,7 @@ Ante {
   Program     = Statement+
 
   Statement   = VarDecl
+              | AllInVarDecl
               | FunDecl
               | Exp ("++" | "--") ";"                         --bump
               | Exp "=" Exp ";"                               --assign
@@ -14,6 +15,7 @@ Ante {
               | LoopStmt
 
   VarDecl     = hand id "=" (Exp | Object) ";"
+  AllInVarDecl = all_in id "=" (Exp | Object) ";"
   FunDecl     = deal id Params ":" Block
   Params      = "(" ListOf<Param, ","> ")"
   Param       = id
@@ -29,13 +31,12 @@ Ante {
 
   TurnCall    = turn "(" ListOf<Exp, ","> ")"
   
-
   Exp         = Object
               | Exp ("or" Exp)+                              --or
               | Exp ("and" Exp)+                             --and
-              | Exp ("<="|"<"|"=="|"!="|">="|">") Exp         --compare
+              | Exp ("<=" | "<" | "==" | "!=" | ">=" | ">") Exp         --compare
               | Exp ("+" | "-") Exp                         --add
-              | Exp ("*"| "/" | "%") Exp                     --multiply
+              | Exp ("*" | "/" | "%") Exp                     --multiply
               | Exp "**" Exp                                --power
               | ("-" | "!") Exp                             --unary
               | true
@@ -47,7 +48,7 @@ Ante {
               | Exp "." id                                  --member
               | stringlit
               | id
-              | "[" ListOf<Exp, ","> "]"             --arrayexp
+              | "[" ListOf<Exp, ","> "]"                     --arrayexp
               | "(" Exp ")"                                 --parens
 
   Object      = "{" ListOf<Member, ","> "}"
@@ -74,10 +75,11 @@ Ante {
   true        = "true" ~alnum
   false       = "false" ~alnum
   raise       = "raise" ~alnum
-  turn       = "turn" ~alnum
+  turn        = "turn" ~alnum
+  all_in      = "all in" ~alnum
 
   keyword     = hand | deal | if | else | while | for | in 
-              | break | return | true | false | raise | turn
+              | break | return | true | false | raise | turn | all_in
   id          = ~keyword letter alnum*
   
   space      += "//" (~"\n" any)*                             --comment
