@@ -16,45 +16,54 @@ const semanticChecks = [
   ["adding floats to integers", "raise(1 + 2.2);\n  raise(1.1 + 2);"],
   [
     "factorial function",
-    "deal factorial(n):\n  if n == 0:\n    return 1;\n  else:\n    return n * factorial(n - 1);\nhand result = factorial(5);\nraise(result);",
+    "deal factorial(n):\n  if n == 0:\n    return 1;\n  else:\n    return n * factorial(n - 1);\nFOLD\nFOLD\nhand result = factorial(5);\nraise(result);",
   ],
   ["arithmetic", "hand x = 1; raise(2 * 3 + 5 ** -3 / 2 - 5 % 8);"],
   ["nested arrays", "hand x = [1, [2, 3], 4];"],
-  ["negation", "hand x = false;\nif !x:\n  raise(1);"],
+  ["negation", "hand x = false;\nif !x:\n  raise(1);\nFOLD"],
   ["concatation", 'raise("hello" + ", " + "world");'],
   ["variables can be printed", "hand x = 1;\nraise(x);"],
   ["initialize variable with empty array", "hand x = [];"],
   ["objecy and member access", "hand x = {a: 1}; raise(x.a);"],
-  ["break statement", "while true:\n  if 1 == 1:\n    break;"],
-  ["short return statement", "deal f(x):\n if x == 2:\n return;"],
+  ["break statement", "while true:\n  if 1 == 1:\n    break;\n  FOLD\nFOLD"],
+  ["short return statement", "deal f(x):\n if x == 2:\n return;\n FOLD\nFOLD"],
   [
     "variable function",
-    "deal f(a,b):\n  return a + b;\nhand x = f(1,2); raise(x);",
+    "deal f(a,b):\n  return a + b;\nFOLD\nhand x = f(1,2); raise(x);",
   ],
   ["and expression", "raise(true and false);"],
   ["or expression", "raise(true or false);"],
-  ["for in loop", "hand x = [0,1,2];\nfor i in x:\n  raise(i);"],
-  ["for in loop with  positive turn", "for i in turn(1, 3, 2):\n  raise(i);"],
-  ["for in loop with negative turn", "for i in turn(3, 1, -1):\n  raise(i);"],
-  ["for in loop with ternary step", "for i in turn(1, 3, 1+1):\n raise(i);"],
+  ["for in loop", "hand x = [0,1,2];\nfor i in x:\n  raise(i);\nFOLD"],
+  [
+    "for in loop with  positive turn",
+    "for i in turn(1, 3, 2):\n  raise(i);\nFOLD",
+  ],
+  [
+    "for in loop with negative turn",
+    "for i in turn(3, 1, -1):\n  raise(i);\nFOLD",
+  ],
+  [
+    "for in loop with ternary step",
+    "for i in turn(1, 3, 1+1):\n raise(i);\nFOLD",
+  ],
   ["increment and decrement", "hand x = 10; x--; x++;"],
-  ["call of assigned functions", 'deal f(x):\n  raise("hello");\nf(1);'],
+  ["call of assigned functions", 'deal f(x):\n  raise("hello");\nFOLD\nf(1);'],
   [
     "if else statement",
-    "hand x = 10;\nif x > 5:\n  x = x - 1;\nelse:\n x = x + 1;",
+    "hand x = 10;\nif x > 5:\n  x = x - 1;\nelse:\n x = x + 1;\nFOLD",
   ],
   ["assign to array element", "hand a = [1,2,3]; a[1] = 100;"],
   ["subscripted string", 'hand x = "hello";\nraise(x[0]);'],
   [
     "else if statement",
-    "hand x = 10;\nif x > 5:\n  x = x - 1;\nelse if x < 2:\n x = x + 1;",
+    "hand x = 10;\nif x > 5:\n  x = x - 1;\nelse if x < 2:\n x = x + 1;\nFOLD",
   ],
   [
     "If-Elsif-Else Chain",
-    "hand y = 0;\nif y > 0:\n y = y * 2;\nelse if y == 0:\n y = 100;\nelse:\n   y = -100;",
+    "hand y = 0;\nif y > 0:\n y = y * 2;\nelse:\n if y == 0:\n y = 100;\nelse:\n   y = -100;\n  FOLD\nFOLD",
   ],
-  ["while statement", "while true:\n    raise(1);"],
-  ["if statement", "hand x  = 2;\nif x == 2:\n    raise(1);"],
+  ["while statement", "while true:\n    raise(1);\nFOLD"],
+  ["if statement", "hand x  = 2;\nif x == 2:\n    raise(1);\nFOLD"],
   ["variables can be reassigned", "hand x = 1;\nx = x * 5 / ((-3) + x);"],
   ["built-in cos", "raise(cos(93.999));"],
   ["built-in sin", "raise(sin(1) + 1);"],
@@ -63,7 +72,7 @@ const semanticChecks = [
   ["built-in abs", "raise(abs(-1));"],
   [
     "adding results of functions",
-    "deal f(x):\n  return x + 1;\nraise(f(1) + f(2));",
+    "deal f(x):\n  return x + 1;\nFOLD\nraise(f(1) + f(2));",
   ],
   [
     "several nested identifiers",
@@ -98,16 +107,16 @@ const semanticErrors = [
     "hand x = 2;\nhand y = false;\nraise(x + y);",
     /Expression type mismatch: int vs boolean/,
   ],
-  ["non-boolean condition", "if 1:\n  raise(1);", /Expected a boolean/],
+  ["non-boolean condition", "if 1:\n  raise(1);\nFOLD", /Expected a boolean/],
   ["using undeclared identifier", "raise(x);", /Identifier x not declared/],
   [
     "too few arguments in turn",
-    "for i in turn(1, 3):\n  raise(i);",
+    "for i in turn(1, 3):\n  raise(i);\nFOLD",
     /TurnCall requires exactly three parameters/,
   ],
   [
     "using step of size 0",
-    "for i in turn(1, 3, 0):\n  raise(i);",
+    "for i in turn(1, 3, 0):\n  raise(i);\nFOLD",
     /Step size must be non-zero/,
   ],
   [
@@ -164,7 +173,7 @@ const semanticErrors = [
   ],
   [
     "duplicate parameter",
-    "deal f(x, x):\n  raise(x);",
+    "deal f(x, x):\n  raise(x);\nFOLD",
     /Duplicate parameter name: x/,
   ],
 ];
@@ -191,7 +200,7 @@ describe("The Ante analyzer", () => {
           binary(
             "+",
             variable("π", false, floatType),
-            { type: floatType, value: 2.2 },
+            { kind: "FloatLiteral", type: floatType, value: 2.2 },
             floatType
           )
         ),

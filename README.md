@@ -37,6 +37,7 @@ greet("Alice")
 ```
 deal greet(name):
     raise("Hello, {name}!");
+FOLD
 greet("Alice");
 
 ```
@@ -67,7 +68,8 @@ for (let i = 0; i < 3; i++) {
 for hand i in range(3):
     for hand j in range(2):
         raise("i = {i}, j = {j}!");
-
+    FOLD
+FOLD
 
 ```
 
@@ -101,7 +103,7 @@ hand factorial(n):
         return 1;
     else:
         return n * factorial(n - 1);
-
+FOLD
 hand result = factorial(5);
 
 raise(result);

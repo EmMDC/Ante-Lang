@@ -148,7 +148,7 @@ export default function analyze(match) {
         context.add(id.sourceString, variable);
         return core.variableDeclaration(variable, initializer);
       },
-      FunDecl(_deal, id, params, _colon, block) {
+      FunDecl(_deal, id, params, _colon, statements, _fold) {
         // Function declaration: check for duplicates and set up new context
         checkNotAlreadyDeclared(id, { at: id });
         const parentContext = context;
@@ -166,7 +166,7 @@ export default function analyze(match) {
         parameters.forEach((param) => context.add(param.name, param));
         funDepth++;
         try {
-          const body = block.analyze();
+          const body = statements.children.map((s) => s.analyze());
           fun.body = body;
           let returnType = core.anyType;
           for (const stmt of body) {
@@ -192,9 +192,6 @@ export default function analyze(match) {
       },
       Param(id) {
         return core.variable(id.sourceString, false);
-      },
-      Block(statements) {
-        return statements.children.map((s) => s.analyze());
       },
       Statement_bump(exp, op, _semi) {
         // Increment or decrement operation on a mutable target
@@ -234,40 +231,55 @@ export default function analyze(match) {
         }
         return core.shortReturnStatement();
       },
-      IfStmt_long(_if, exp, _colon, block1, _else, _colon2, block2) {
+      IfStmt_ifelse(
+        _if,
+        exp,
+        _colon,
+        statements,
+        _else,
+        _colon2,
+        elseStatements,
+        _fold
+      ) {
         const condition = exp.analyze();
         checkIsBoolean(condition, _if);
-        return core.ifStatement(condition, block1.analyze(), block2.analyze());
+        const consequent = statements.children.map((s) => s.analyze());
+        const alternate = elseStatements.children.map((s) => s.analyze());
+        return core.ifStatement(condition, consequent, alternate);
       },
-      IfStmt_elsif(_if, exp, _colon, block, _else, ifstmt) {
+      IfStmt_elsif(_if, exp, _colon, statements, _else, ifstmt) {
         const condition = exp.analyze();
         checkIsBoolean(condition, _if);
-        return core.ifStatement(condition, block.analyze(), ifstmt.analyze());
+        const consequent = statements.children.map((s) => s.analyze());
+        return core.ifStatement(condition, consequent, ifstmt.analyze());
       },
-      IfStmt_short(_if, exp, _colon, block) {
+      IfStmt_short(_if, exp, _colon, statements, _fold) {
         const condition = exp.analyze();
         checkIsBoolean(condition, _if);
-        return core.shortIfStatement(condition, block.analyze());
+        const body = statements.children.map((s) => s.analyze());
+        return core.shortIfStatement(condition, body);
       },
-      LoopStmt_while(_while, exp, _colon, block) {
+      LoopStmt_while(_while, exp, _colon, statements, _fold) {
+        const condition = exp.analyze();
+        checkIsBoolean(condition, _while);
         loopDepth++;
-        const result = core.whileStatement(exp.analyze(), block.analyze());
+        const body = statements.children.map((s) => s.analyze());
         loopDepth--;
-        return result;
+        return core.whileStatement(condition, body);
       },
-      LoopStmt_range(_for, id, _in, turnCall, _colon, block) {
+      LoopStmt_range(_for, id, _in, turnCall, _colon, statements, _fold) {
         // Handle a for-range loop, setting up a new child context for loop variable
-        const variable = core.variable(id.sourceString, true);
+        const iterator = core.variable(id.sourceString, true);
         const parentContext = context;
         context = parentContext.newChildContext();
-        context.add(id.sourceString, variable);
+        context.add(id.sourceString, iterator);
         loopDepth++;
-        const body = block.analyze();
+        const body = statements.children.map((s) => s.analyze());
         loopDepth--;
         context = parentContext;
         const turnCallResult = turnCall.analyze();
         return core.forTurnStatement(
-          variable,
+          iterator,
           turnCallResult.low,
           turnCallResult.op,
           turnCallResult.high,
@@ -275,18 +287,18 @@ export default function analyze(match) {
           body
         );
       },
-      LoopStmt_collection(_for, id, _in, exp, _colon, block) {
+      LoopStmt_collection(_for, id, _in, exp, _colon, statements, _fold) {
         // For-each loop over a collection
-        const variable = core.variable(id.sourceString, true);
+        const iterator = core.variable(id.sourceString, true);
         const collection = exp.analyze();
         const parentContext = context;
         context = parentContext.newChildContext();
-        context.add(id.sourceString, variable);
+        context.add(id.sourceString, iterator);
         loopDepth++;
-        const body = block.analyze();
+        const body = statements.children.map((s) => s.analyze());
         loopDepth--;
         context = parentContext;
-        return core.forStatement(variable, collection, body);
+        return core.forStatement(iterator, collection, body);
       },
       TurnCall(_turn, _open, args, _close) {
         // Ensure exactly three arguments for turnCall
@@ -312,7 +324,7 @@ export default function analyze(match) {
           low: start,
           op: stepValue < 0 ? ">" : "<",
           high: end,
-          step: step,
+          step: stepValue,
         };
       },
       Exp(exp) {
@@ -427,13 +439,25 @@ export default function analyze(match) {
         return { value: false, type: core.booleanType };
       },
       floatlit(digits, _dot, _fractional, _e, _sign, _exponent) {
-        return { value: Number(this.sourceString), type: core.floatType };
+        return {
+          kind: "FloatLiteral",
+          value: Number(this.sourceString),
+          type: core.floatType,
+        };
       },
       intlit(_) {
-        return { value: Number(this.sourceString), type: core.intType };
+        return {
+          kind: "IntLiteral",
+          value: Number(this.sourceString),
+          type: core.intType,
+        };
       },
       stringlit(_open, chars, _close) {
-        return { value: this.sourceString.slice(1, -1), type: core.stringType };
+        return {
+          kind: "StringLiteral",
+          value: this.sourceString.slice(1, -1),
+          type: core.stringType,
+        };
       },
       Object(_open, list, _close) {
         return {

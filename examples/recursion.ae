@@ -3,7 +3,8 @@ hand factorial(n):
         return 1;
     else:
         return n * factorial(n - 1);
-
+    FOLD
+FOLD
 hand result = factorial(5);
 
 raise(result);

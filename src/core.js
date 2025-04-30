@@ -83,7 +83,7 @@ export function whileStatement(test, body) {
 }
 
 export function forTurnStatement(
-  variable,
+  iterator,
   lower,
   direction,
   upper,
@@ -92,7 +92,7 @@ export function forTurnStatement(
 ) {
   return {
     kind: "ForTurnStatement",
-    variable,
+    iterator,
     lower,
     direction,
     upper,
@@ -153,6 +153,7 @@ export function functionCall(callee, args) {
 export function raiseStatement(expression) {
   return { kind: "RaiseStatement", expression };
 }
+
 // --- Standard Library ---
 // These definitions use intrinsic functions to supply built-in math operations.
 const floatToFloatType = functionType([floatType], floatType);
@@ -184,3 +185,7 @@ export const standardLibrary = Object.freeze({
 });
 
 // Extend JavaScript primitives with type properties for static typing
+String.prototype.type = stringType;
+Number.prototype.type = floatType;
+BigInt.prototype.type = intType;
+Boolean.prototype.type = booleanType;

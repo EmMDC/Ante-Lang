@@ -5,19 +5,19 @@ import parse from "../src/parser.js";
 // Programs expected to be syntactically correct in Ante
 const syntaxChecks = [
   ["simplest program", "raise(0);"],
-  ["while statement", "while true:\n    raise(1);"],
-  ["if statement", "if x == 2:\n    raise(1);"],
+  ["while statement", "while true:\n    raise(1);\nFOLD"],
+  ["if statement", "if x == 2:\n    raise(1);\nFOLD"],
   ["multiple statements", "raise(1);\nraise(2);\nhand x = 5;"],
   ["variable declarations", "hand e = 99 * 1;\nhand z = false;"],
   [
     "function with parameter",
-    'deal greet(name):\n    raise("Hello, {name}!");\ngreet("Alice");',
+    'deal greet(name):\n    raise("Hello, {name}!");\nFOLD\ngreet("Alice");',
   ],
   [
     "function returning value",
-    "deal factorial(n):\n    if n == 0:\n        return 1;\n    else:\n        return n * factorial(n - 1);\nhand result = factorial(5);\nraise(result);",
+    "deal factorial(n):\n    if n == 0:\n        return 1;\n    else:\n        return n * factorial(n - 1);\n FOLD\nFOLD\nhand result = factorial(5);\nraise(result);",
   ],
-  ["for loop", "for i in turn(1, 3, 1):\n  raise(i);"],
+  ["for loop", "for i in turn(1, 3, 1):\n  raise(i);\nFOLD"],
   ["array literal and indexing", "hand arr = [10, 20, 30];\nraise(arr[1]);"],
   [
     "object literal and member access",

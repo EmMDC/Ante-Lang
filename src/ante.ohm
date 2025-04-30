@@ -16,18 +16,17 @@ Ante {
 
   VarDecl     = hand id "=" (Exp | Object) ";"
   AllInVarDecl = all_in id "=" (Exp | Object) ";"
-  FunDecl     = deal id Params ":" Block
+  FunDecl     = deal id Params ":" Statement+ fold
   Params      = "(" ListOf<Param, ","> ")"
   Param       = id
-  Block       = Statement*
 
-  IfStmt      = if Exp ":" Block else ":" Block                       --long
-              | if Exp ":" Block else IfStmt                                 --elsif
-              | if Exp ":" Block                                             --short
+  IfStmt      = if Exp ":" Statement else ":" Statement  fold      --ifelse
+              | if Exp ":" Statement else IfStmt                         --elsif
+              | if Exp ":" Statement fold                                --short
 
-  LoopStmt    = while Exp ":" Block                               --while
-              | for id in TurnCall ":" Block                 --range
-              | for id in Exp ":" Block                     --collection
+  LoopStmt    = while Exp ":" Statement+ fold                  --while
+              | for id in TurnCall ":" Statement+ fold         --range
+              | for id in Exp ":" Statement+ fold             --collection
 
   TurnCall    = turn "(" ListOf<Exp, ","> ")"
   
@@ -38,7 +37,7 @@ Ante {
               | Exp ("+" | "-") Exp                         --add
               | Exp ("*" | "/" | "%") Exp                     --multiply
               | Exp "**" Exp                                --power
-              | ("-" | "!") Exp                             --unary
+              | ("-" | "!" | random) Exp                             --unary
               | true
               | false
               | floatlit
@@ -63,6 +62,7 @@ Ante {
   control     = "\x00".."\x1f" | "\x80".."\x9f"
   hex         = hexDigit
 
+  fold        = "FOLD" ~alnum
   hand        = "hand" ~alnum
   deal        = "deal" ~alnum
   if          = "if" ~alnum
@@ -77,9 +77,10 @@ Ante {
   raise       = "raise" ~alnum
   turn        = "turn" ~alnum
   all_in      = "all in" ~alnum
+  random      = "random" ~alnum
 
   keyword     = hand | deal | if | else | while | for | in 
-              | break | return | true | false | raise | turn | all_in
+              | break | return | true | false | raise | turn | all_in | fold | random
   id          = ~keyword letter alnum*
   
   space      += "//" (~"\n" any)*                             --comment
