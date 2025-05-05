@@ -18,6 +18,13 @@ const fixtures = [
     `,
   },
   {
+    name: "mathematical expression",
+    source: `raise((1 + 2 * 3 - 1)/2);\nraise(6%%2%2);`,
+    expected: dedent`
+      console.log((((1 + (2 * 3)) - 1) / 2));\nconsole.log((Math.floor(6 / 2) % 2));
+    `,
+  },
+  {
     name: "variable declaration",
     source: `
       hand x = 5;
@@ -265,11 +272,11 @@ const fixtures = [
   {
     name: "hypot operator",
     source: `
-      hand h = hypot(3, 4);
+      hand h = hypot(3,4);
       raise(h);
     `,
     expected: dedent`
-      let h_1 = Math.hypot(3,4);
+      let h_1 = Math.hypot(3, 4);
       console.log(h_1);
     `,
   },

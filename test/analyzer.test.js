@@ -14,6 +14,7 @@ const semanticChecks = [
   ["simplest program", "raise(0);"],
   ["all in (const) variable declaration", "all in x = 1; hand y = 2 * x;"],
   ["adding floats to integers", "raise(1 + 2.2);\n  raise(1.1 + 2);"],
+  ["floor division", "raise(1 %% 2);"],
   [
     "factorial function",
     "deal factorial(n):\n  if n == 0:\n    return 1;\n  else:\n    return n * factorial(n - 1);\nFOLD\nFOLD\nhand result = factorial(5);\nraise(result);",

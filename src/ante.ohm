@@ -1,18 +1,18 @@
 Ante {
-  Program     = Statement+
+  Program = Statement+
 
-  Statement   = VarDecl
-              | AllInVarDecl
-              | FunDecl
-              | Exp ("++" | "--") ";"                         --bump
-              | Exp "=" Exp ";"                               --assign
-              | Exp_call ";"                                  --call
-              | raise Exp ";"                                 --raise
-              | break ";"                                     --break
-              | return Exp ";"                                --return
-              | return ";"                                    --shortreturn
-              | IfStmt
-              | LoopStmt
+  Statement = VarDecl
+            | AllInVarDecl
+            | FunDecl
+            | Exp ("++" | "--") ";"    --bump
+            | Exp "=" Exp ";"            --assign
+            | Exp_postfix_call ";"                  --call
+            | raise Exp ";"                --raise
+            | break ";"                    --break
+            | return Exp ";"               --return
+            | return ";"                   --shortreturn
+            | IfStmt
+            | LoopStmt
 
   VarDecl     = hand id "=" (Exp | Object) ";"
   AllInVarDecl = all_in id "=" (Exp | Object) ";"
@@ -20,35 +20,51 @@ Ante {
   Params      = "(" ListOf<Param, ","> ")"
   Param       = id
 
-  IfStmt      = if Exp ":" Statement else ":" Statement  fold      --ifelse
-              | if Exp ":" Statement else IfStmt                         --elsif
-              | if Exp ":" Statement fold                                --short
+  IfStmt = if Exp ":" Statement else ":" Statement  fold    --ifelse
+         | if Exp ":" Statement else IfStmt               --elsif
+         | if Exp ":" Statement fold                       --short
 
-  LoopStmt    = while Exp ":" Statement+ fold                  --while
-              | for id in TurnCall ":" Statement+ fold         --range
-              | for id in Exp ":" Statement+ fold             --collection
+  LoopStmt = while Exp ":" Statement+ fold                --while
+           | for id in TurnCall ":" Statement+ fold        --range
+           | for id in Exp ":" Statement+ fold            --collection
 
-  TurnCall    = turn "(" ListOf<Exp, ","> ")"
-  
-  Exp         = Object
-              | Exp ("or" Exp)+                              --or
-              | Exp ("and" Exp)+                             --and
-              | Exp ("<=" | "<" | "==" | "!=" | ">=" | ">") Exp         --compare
-              | Exp ("+" | "-") Exp                         --add
-              | Exp ("*" | "/" | "%") Exp                     --multiply
-              | Exp "**" Exp                                --power
-              | ("-" | "!" | random) Exp                             --unary
-              | true
+  TurnCall = turn "(" ListOf<Exp, ","> ")"
+
+  Exp = Exp ("<=" | "<" | "==" | "!=" | ">=" | ">") Exp_or  --compare
+              | Exp_or
+
+  Exp_or = Exp_or "or" Exp_and    --or
+         | Exp_and
+
+  Exp_and = Exp_and "and" Exp_add  --and
+          | Exp_add
+
+  Exp_add = Exp_add ("+" | "-") Exp_mul  --add
+          | Exp_mul
+
+  Exp_mul = Exp_mul ("*" | "%%" | "%" | "/") Exp_power  --multiply
+          | Exp_power
+
+  Exp_power = Exp_unary "**" Exp_power  --power
+            | Exp_unary
+
+  Exp_unary = ("-" | "!" | random) Exp_unary  --unary
+            | Exp_postfix
+
+  Exp_postfix = Exp_postfix "(" ListOf<Exp, ","> ")"  --call
+              | Exp_postfix "[" Exp "]"                --subscript
+              | Exp_postfix "." id                       --member
+              | Exp_primary
+
+  Exp_primary = true
               | false
               | floatlit
               | intlit
-              | Exp "(" ListOf<Exp, ","> ")"                 --call
-              | Exp "[" Exp "]"                             --subscript
-              | Exp "." id                                  --member
               | stringlit
               | id
-              | "[" ListOf<Exp, ","> "]"                     --arrayexp
-              | "(" Exp ")"                                 --parens
+              | "[" ListOf<Exp, ","> "]"               --arrayexp
+              | "(" Exp ")"                           --parens
+              | Object
 
   Object      = "{" ListOf<Member, ","> "}"
   Member      = id ":" Exp

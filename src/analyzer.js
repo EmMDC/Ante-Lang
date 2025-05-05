@@ -99,6 +99,7 @@ export default function analyze(match) {
       return core.floatType;
     }
   }
+
   function checkArgumentCount(args, callee, at) {
     const argCount = args.length;
     const paramCount = callee.intrinsic
@@ -116,9 +117,6 @@ export default function analyze(match) {
   const analyzer = match.matcher.grammar
     .createSemantics()
     .addOperation("analyze", {
-      _iter(...children) {
-        return children.map((child) => child.analyze());
-      },
       Program(statements) {
         // Build a program using analyzed statements
         return core.program(statements.children.map((s) => s.analyze()));
@@ -288,7 +286,6 @@ export default function analyze(match) {
         );
       },
       LoopStmt_collection(_for, id, _in, exp, _colon, statements, _fold) {
-        // For-each loop over a collection
         const iterator = core.variable(id.sourceString, true);
         const collection = exp.analyze();
         const parentContext = context;
@@ -301,7 +298,6 @@ export default function analyze(match) {
         return core.forStatement(iterator, collection, body);
       },
       TurnCall(_turn, _open, args, _close) {
-        // Ensure exactly three arguments for turnCall
         const argNodes = args.asIteration().children;
         if (argNodes.length !== 3) {
           throw new Error("TurnCall requires exactly three parameters");
@@ -309,6 +305,7 @@ export default function analyze(match) {
         const start = argNodes[0].analyze();
         const end = argNodes[1].analyze();
         const step = argNodes[2].analyze();
+        console.log("S T E P", step.value);
         let stepValue = step.value !== undefined ? step.value : step;
         if (
           step.kind === "UnaryExpression" &&
@@ -317,7 +314,7 @@ export default function analyze(match) {
         ) {
           stepValue = -step.operand.value;
         }
-        if (stepValue === 0) {
+        if (stepValue === 0n || stepValue === 0.0) {
           throw new Error("Step size must be non-zero");
         }
         return {
@@ -327,28 +324,28 @@ export default function analyze(match) {
           step: stepValue,
         };
       },
-      Exp(exp) {
-        return exp.analyze();
+      Exp_compare(exp, op, exp2) {
+        const left = exp.analyze();
+        const right = exp2.analyze();
+        checkSameExp(left, right, op);
+        return core.binary(op.sourceString, left, right, core.booleanType);
       },
-      Exp_or(left, _op, right) {
+      Exp_or_or(left, _op, right) {
         const x = left.analyze();
         const y = right.analyze();
+        checkIsBoolean(x, _op);
+        checkIsBoolean(y, _op);
         return core.binary("or", x, y, core.booleanType);
       },
-      Exp_and(left, _op, right) {
+      Exp_and_and(left, _op, right) {
         const x = left.analyze();
         const y = right.analyze();
+        checkIsBoolean(x, _op);
+        checkIsBoolean(y, _op);
         return core.binary("and", x, y, core.booleanType);
       },
-      Exp_compare(exp, op, exp2) {
-        return core.binary(
-          op.sourceString,
-          exp.analyze(),
-          exp2.analyze(),
-          core.booleanType
-        );
-      },
-      Exp_add(exp, op, exp2) {
+
+      Exp_add_add(exp, op, exp2) {
         const left = exp.analyze();
         const right = exp2.analyze();
         checkNotFunction(left, op);
@@ -357,16 +354,32 @@ export default function analyze(match) {
         const resultType = promoteType(left.type, right.type);
         return core.binary(op.sourceString, left, right, resultType);
       },
-      Exp_multiply(exp, op, exp2) {
+      Exp_mul_multiply(exp, op, exp2) {
         const left = exp.analyze();
         const right = exp2.analyze();
         checkNotFunction(left, op);
         checkNotFunction(right, op);
         checkSameExp(left, right, op);
         const resultType = promoteType(left.type, right.type);
-        return core.binary(op.sourceString, left, right, resultType);
+
+        switch (op.sourceString) {
+          case "%%":
+            return core.binary("%%", left, right, resultType);
+
+          case "/": {
+            return core.binary("/", left, right, resultType);
+          }
+          case "*": {
+            return core.binary("*", left, right, resultType);
+          }
+
+          case "%": {
+            return core.binary("%", left, right, resultType);
+          }
+        }
       },
-      Exp_power(exp, _op, exp2) {
+
+      Exp_power_power(exp, _op, exp2) {
         const left = exp.analyze();
         const right = exp2.analyze();
         checkNotFunction(left, _op);
@@ -375,11 +388,11 @@ export default function analyze(match) {
         const resultType = promoteType(left.type, right.type);
         return core.binary("**", left, right, resultType);
       },
-      Exp_unary(op, exp) {
+      Exp_unary_unary(op, exp) {
         const operand = exp.analyze();
         return core.unary(op.sourceString, operand, operand.type);
       },
-      Exp_call(exp, _open, list, _close) {
+      Exp_postfix_call(exp, _open, list, _close) {
         const callee = exp.analyze();
         const args = list.asIteration().children.map((x) => x.analyze());
 
@@ -405,7 +418,7 @@ export default function analyze(match) {
         checkArgumentCount(args, callee, _open);
         return core.functionCall(callee, args);
       },
-      Exp_subscript(exp, _open, index, _close) {
+      Exp_postfix_subscript(exp, _open, index, _close) {
         const arrayEntity = exp.analyze();
         if (
           arrayEntity.type === core.booleanType ||
@@ -418,18 +431,18 @@ export default function analyze(match) {
         }
         return core.subscript(arrayEntity, index.analyze());
       },
-      Exp_member(exp, _dot, id) {
+      Exp_postfix_member(exp, _dot, id) {
         return core.memberExpression(exp.analyze(), _dot.sourceString, {
           name: id.sourceString,
         });
       },
-      Exp_arrayexp(_open, list, _close) {
+      Exp_primary_arrayexp(_open, list, _close) {
         const children = list.asIteration().children;
         return children.length === 0
           ? core.emptyArray(core.anyType)
           : core.arrayExpression(children.map((x) => x.analyze()));
       },
-      Exp_parens(_open, exp, _close) {
+      Exp_primary_parens(_open, exp, _close) {
         return exp.analyze();
       },
       true(_) {
@@ -448,7 +461,7 @@ export default function analyze(match) {
       intlit(_) {
         return {
           kind: "IntLiteral",
-          value: Number(this.sourceString),
+          value: BigInt(this.sourceString),
           type: core.intType,
         };
       },

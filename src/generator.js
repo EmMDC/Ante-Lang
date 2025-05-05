@@ -39,12 +39,10 @@ export default function generate(program) {
       return targetName(v);
     },
 
-    // Handle array literals
     EmptyArray() {
       return "[]";
     },
 
-    // Handle non-empty array literals
     ArrayExpression(node) {
       return `[${node.elements.map(gen).join(", ")}]`;
     },
@@ -87,11 +85,6 @@ export default function generate(program) {
       s.consequent.forEach(gen);
 
       const generateElse = (node) => {
-        // if (!node) {
-        //   output.push("}");
-        //   return;
-        // }
-
         if (Array.isArray(node)) {
           output.push("} else {");
           node.forEach(gen);
@@ -100,7 +93,6 @@ export default function generate(program) {
           output.push(`} else if (${gen(node.test)}) {`);
           node.consequent.forEach(gen);
 
-          // Recursively handle any nested else or else-if
           generateElse(node.alternate);
         }
       };
@@ -135,10 +127,17 @@ export default function generate(program) {
       return targetName(f);
     },
     BinaryExpression(e) {
-      if (e.op === "hypot") return `Math.hypot(${gen(e.left)},${gen(e.right)})`;
-      const op = { "==": "===", "!=": "!==" }[e.op] ?? e.op;
+      if (e.op === "hypot")
+        return `Math.hypot(${gen(e.left)}, ${gen(e.right)})`;
+
+      if (e.op === "%%") return `Math.floor(${gen(e.left)} / ${gen(e.right)})`;
+
+      if (e.op === "%") return `(${gen(e.left)} % ${gen(e.right)})`;
+
+      const op = { "==": "===", "!=": "!==", or: "||" }[e.op] ?? e.op;
       return `(${gen(e.left)} ${op} ${gen(e.right)})`;
     },
+
     UnaryExpression(e) {
       const operand = gen(e.operand);
       if (e.op === "random")
@@ -153,7 +152,6 @@ export default function generate(program) {
       if (e.op === "ln") return `Math.log(${operand})`;
       return `${e.op}(${operand})`;
     },
-    // after UnaryExpression
     MemberExpression(e) {
       return `${gen(e.object)}.${e.field.name}`;
     },
@@ -166,6 +164,5 @@ export default function generate(program) {
     },
   };
   gen(program);
-  console.log("⟵ generator output array:", output);
   return output.join("\n");
 }
