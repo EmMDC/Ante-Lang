@@ -9,10 +9,11 @@ const optimizers = {
   BinaryExpression(node) {
     const left = optimize(node.left);
     const right = optimize(node.right);
+    const op = optimize(node.op);
 
     // Number constant folding
     if (typeof left === "number" && typeof right === "number") {
-      switch (node.op) {
+      switch (op) {
         case "+":
           return left + right;
         case "-":

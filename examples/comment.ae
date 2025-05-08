@@ -1,6 +1,7 @@
 //This is a comment
 
---
-This is
-a comment
---
+all in x = "Not a comment";
+
+$$
+comment
+$$

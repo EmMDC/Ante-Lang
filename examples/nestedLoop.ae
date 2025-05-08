@@ -1,5 +1,12 @@
-for hand i in range(3):
-    for hand j in range(2):
-        raise("i = {i}, j = {j}!");
+deal printGrid(rows, cols):
+  for i in turn(0, rows, 1):
+    for j in turn(0, cols, 1):
+      raise("Cell (" + i + "," + j + ")");
     FOLD
+  FOLD
 FOLD
+
+hand numRows = 3;
+hand numCols = 4;
+
+raise(numRows,numCols);

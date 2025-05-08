@@ -2,3 +2,4 @@ deal add():
     return 2 + 2;
 FOLD
 add();
+raise(add());

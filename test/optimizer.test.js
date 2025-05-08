@@ -42,10 +42,8 @@ describe("The optimizer", () => {
 
 describe("fallback behavior", () => {
   it("returns the exact same node when no optimizer is defined for its kind", () => {
-    // create a dummy AST‐ish node that optimizer doesn’t know about
     const dummy = { kind: "NoSuchKind", foo: 123 };
 
-    // optimize should just return the *same* object
     const result = optimize(dummy);
     assert.strictEqual(result, dummy);
   });

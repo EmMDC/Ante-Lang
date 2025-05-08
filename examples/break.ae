@@ -1,1 +1,13 @@
-break;
+hand x = true;
+hand ctr = 3;
+while x:
+    if ctr > 0:
+        raise(ctr);
+        ctr --;
+        
+    else:
+        raise("Goodbye!");      
+        break;
+        FOLD
+FOLD
+    

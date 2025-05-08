@@ -5,6 +5,7 @@ import parse from "../src/parser.js";
 // Programs expected to be syntactically correct in Ante
 const syntaxChecks = [
   ["simplest program", "raise(0);"],
+  ["test sin", "raise(sin(0));"],
   ["while statement", "while true:\n    raise(1);\nFOLD"],
   ["if statement", "if x == 2:\n    raise(1);\nFOLD"],
   ["multiple statements", "raise(1);\nraise(2);\nhand x = 5;"],
@@ -25,7 +26,7 @@ const syntaxChecks = [
   ],
   [
     "single-line and multi-line comments",
-    "raise(1); // this is a comment\n--\nthis is a\nmulti-line comment\n--\nraise(2);",
+    "raise(1); // this is a comment\n$$\nthis is a\nmulti-line comment\n$$\nraise(2);",
   ],
   ["string literal with escapes", 'raise("a\\n\\tbc\\\\de\\"fg");'],
   ["non-Latin identifier", "hand コンパイラ = 100;\nraise(コンパイラ);"],

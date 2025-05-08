@@ -32,7 +32,11 @@ export default function generate(program) {
     },
 
     VariableDeclaration(d) {
-      output.push(`let ${gen(d.variable)} = ${gen(d.initializer)};`);
+      if (d.variable.allIn) {
+        output.push(`const ${gen(d.variable)} = ${gen(d.initializer)};`);
+      } else {
+        output.push(`let ${gen(d.variable)} = ${gen(d.initializer)};`);
+      }
     },
     Variable(v) {
       if (standardLibrary[v.name] === v) return v.name;
@@ -48,6 +52,11 @@ export default function generate(program) {
     },
 
     FunctionCall(n) {
+      // Handle raise function specially
+      if (n.callee.name === "raise") {
+        output.push(`console.log(${n.args.map(gen).join(", ")});`);
+        return "";
+      }
       return `${gen(n.callee)}(${n.args.map(gen).join(", ")})`;
     },
 
@@ -63,9 +72,6 @@ export default function generate(program) {
     },
     Decrement(s) {
       output.push(`${gen(s.variable)}--;`);
-    },
-    RaiseStatement(s) {
-      output.push(`console.log(${gen(s.expression)});`);
     },
 
     ReturnStatement(node) {
@@ -134,12 +140,14 @@ export default function generate(program) {
 
       if (e.op === "%") return `(${gen(e.left)} % ${gen(e.right)})`;
 
-      const op = { "==": "===", "!=": "!==", or: "||" }[e.op] ?? e.op;
+      const op =
+        { "==": "===", "!=": "!==", or: "||", and: "&&" }[e.op] ?? e.op;
       return `(${gen(e.left)} ${op} ${gen(e.right)})`;
     },
 
     UnaryExpression(e) {
       const operand = gen(e.operand);
+      // No need to handle raise here since it's handled in FunctionCall
       if (e.op === "random")
         return `((a=>a[~~(Math.random()*a.length)])(${operand}))`;
       if (e.op === "codepoints")
@@ -150,6 +158,7 @@ export default function generate(program) {
       if (e.op === "cos") return `Math.cos(${operand})`;
       if (e.op === "exp") return `Math.exp(${operand})`;
       if (e.op === "ln") return `Math.log(${operand})`;
+      if (e.op === "abs") return `Math.abs(${operand})`;
       return `${e.op}(${operand})`;
     },
     MemberExpression(e) {
@@ -162,6 +171,7 @@ export default function generate(program) {
       const members = e.members.map((m) => `${m.key}: ${gen(m.value)}`);
       return `{ ${members.join(", ")} }`;
     },
+    // Removing the Raise function since we handle it in FunctionCall now
   };
   gen(program);
   return output.join("\n");

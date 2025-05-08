@@ -7,7 +7,6 @@ Ante {
             | Exp ("++" | "--") ";"    --bump
             | Exp "=" Exp ";"            --assign
             | Exp_postfix_call ";"                  --call
-            | raise Exp ";"                --raise
             | break ";"                    --break
             | return Exp ";"               --return
             | return ";"                   --shortreturn
@@ -15,14 +14,19 @@ Ante {
             | LoopStmt
 
   VarDecl     = hand id "=" (Exp | Object) ";"
-  AllInVarDecl = all_in id "=" (Exp | Object) ";"
-  FunDecl     = deal id Params ":" Statement+ fold
+  AllInVarDecl = all_in id  "=" (Exp | Object) ";"
+  FunDecl     = deal id Params ReturnAnnot? ":" Statement+ fold
   Params      = "(" ListOf<Param, ","> ")"
-  Param       = id
+  Param       = id TypeAnnot?
+  TypeAnnot   = ":" TypeUnion
+  ReturnAnnot = "->" TypeUnion
 
-  IfStmt = if Exp ":" Statement else ":" Statement  fold    --ifelse
-         | if Exp ":" Statement else IfStmt               --elsif
-         | if Exp ":" Statement fold                       --short
+  TypeUnion = Type ("|" Type)*
+  Type        = "Int" | "Float" | "Bool" | "String" | "Any"
+
+  IfStmt = if Exp ":" Statement+ else ":" Statement+  fold    --ifelse
+         | if Exp ":" Statement+ else IfStmt               --elsif
+         | if Exp ":" Statement+ fold                       --short
 
   LoopStmt = while Exp ":" Statement+ fold                --while
            | for id in TurnCall ":" Statement+ fold        --range
@@ -90,15 +94,17 @@ Ante {
   return      = "return" ~alnum
   true        = "true" ~alnum
   false       = "false" ~alnum
-  raise       = "raise" ~alnum
   turn        = "turn" ~alnum
   all_in      = "all in" ~alnum
   random      = "random" ~alnum
 
   keyword     = hand | deal | if | else | while | for | in 
-              | break | return | true | false | raise | turn | all_in | fold | random
+              | break | return | true | false | turn | all_in | fold | random
   id          = ~keyword letter alnum*
   
-  space      += "//" (~"\n" any)*                             --comment
-              | "--" (~"--" any)* "--" "\n"                   --multilinecomment
+  comment = "//" (~"\n" any)* "\n" 
+        | "$$" (~"$$" any)* "$$"
+
+  space += comment
+
 }

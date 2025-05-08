@@ -3,4 +3,4 @@ hand person = {
     age: 25,
     hobbies: ["reading", "cycling", "painting"]
 };
-raise("Person Info:");
+raise("Person Info:",person.name,person.age,person.hobbies);

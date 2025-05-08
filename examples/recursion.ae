@@ -1,10 +1,11 @@
-hand factorial(n):
-    if n == 0:
+
+deal factorial(n: Int) -> Int:
+    if n <= 1:
         return 1;
     else:
         return n * factorial(n - 1);
     FOLD
 FOLD
-hand result = factorial(5);
 
-raise(result);
+
+raise(factorial(3));

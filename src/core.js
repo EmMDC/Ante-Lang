@@ -140,6 +140,11 @@ export function memberExpression(object, op, field) {
 }
 
 export function functionCall(callee, args) {
+  // Special handling for raise - always treat as a function call
+  if (callee.name === "raise") {
+    return { kind: "FunctionCall", callee, args, type: callee.type.returnType };
+  }
+
   if (callee.intrinsic) {
     if (callee.type.paramTypes.length === 1) {
       return unary(callee.name, args[0], callee.type.returnType);
@@ -150,8 +155,8 @@ export function functionCall(callee, args) {
   return { kind: "FunctionCall", callee, args, type: callee.type.returnType };
 }
 
-export function raiseStatement(expression) {
-  return { kind: "RaiseStatement", expression };
+export function unionType(types) {
+  return { kind: "UnionType", types };
 }
 
 // --- Standard Library ---
@@ -159,6 +164,7 @@ export function raiseStatement(expression) {
 const floatToFloatType = functionType([floatType], floatType);
 const floatFloatToFloatType = functionType([floatType, floatType], floatType);
 const stringToIntsType = functionType([stringType], arrayType(intType));
+const anyToAnyType = functionType([anyType], anyType);
 
 export const standardLibrary = Object.freeze({
   // Built-in types
@@ -171,6 +177,7 @@ export const standardLibrary = Object.freeze({
   // Mathematical constants and functions
   π: variable("π", false, floatType, true),
   E: variable("E", false, floatType, true),
+  raise: intrinsicFunction("raise", anyToAnyType),
   sqrt: intrinsicFunction("sqrt", floatToFloatType),
   sin: intrinsicFunction("sin", floatToFloatType),
   cos: intrinsicFunction("cos", floatToFloatType),

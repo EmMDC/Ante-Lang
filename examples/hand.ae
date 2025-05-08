@@ -1,2 +1,4 @@
-hand x = [2,3,4];
-raise(false > x);
+hand x = 0;
+all in y = "hello";
+raise(1 > x);
+raise(y);

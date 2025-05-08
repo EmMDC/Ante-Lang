@@ -1,1 +1,12 @@
-raise(-5.1 %% 2);
+deal foo(x:Int) -> Int|String:
+    if x > 0:
+        return 12;
+    FOLD
+    return "hello";
+FOLD
+
+hand shouldBeInt = foo(0.0);
+hand shouldBeString = foo(1);
+raise(shouldBeInt);
+raise(shouldBeString);
+raise(shouldBeInt + shouldBeString);

@@ -28,13 +28,13 @@ const fixtures = [
     name: "variable declaration",
     source: `
       hand x = 5;
-      hand y = [];
-      raise(x);
+      all in y = [];
+      raise(abs(x));
     `,
     expected: dedent`
       let x_1 = 5;
-      let y_2 = [];
-      console.log(x_1);
+      const y_2 = [];
+      console.log(Math.abs(x_1));
     `,
   },
   {

@@ -13,12 +13,79 @@ import {
 const semanticChecks = [
   ["simplest program", "raise(0);"],
   ["all in (const) variable declaration", "all in x = 1; hand y = 2 * x;"],
+  ["no-arg raise", "raise();"],
+  [
+    "float annotation",
+    "deal f(x: Float):\n  return x + 1;\nFOLD\nhand x = 1.0;",
+  ],
+  [
+    "fallback-to-anyType for too-complex union",
+    `
+deal baz(x):
+    if x == 0:
+        return 1;
+    FOLD
+    if x == 1:
+        return 2.2;
+    FOLD
+    if x == 2:
+        return "three";
+    FOLD
+    if x == 3:
+        return false;
+    FOLD
+    return 4;
+FOLD
+
+hand w = baz(3);
+raise(w);
+`,
+  ],
+  [" any annotation", "deal f(x: Any):\n  return x + 1;\nFOLD\nhand x = 1.0;"],
   ["adding floats to integers", "raise(1 + 2.2);\n  raise(1.1 + 2);"],
   ["floor division", "raise(1 %% 2);"],
   [
     "factorial function",
-    "deal factorial(n):\n  if n == 0:\n    return 1;\n  else:\n    return n * factorial(n - 1);\nFOLD\nFOLD\nhand result = factorial(5);\nraise(result);",
+    "deal factorial(n: Int) -> Int:\n  if n == 0:\n    return 1;\n  else:\n    return n * factorial(n - 1);\nFOLD\nFOLD\nhand result = factorial(5);\nraise(result);",
   ],
+  [
+    "return inside a while loop",
+    `
+deal foo(x):
+    // return buried in a while
+    while x > 0:
+        return x;
+    FOLD
+    // also a return after the loop
+    return 0;
+FOLD
+
+hand r = foo(5);
+raise(r);
+`,
+  ],
+
+  [
+    "Matching Annotation",
+    "deal add(x: Int, y: Int) -> Int:\n return x + y;\nFOLD",
+  ],
+  [
+    "return inside single-statement else-if",
+    `
+deal foo(x):
+    if x == 0:
+        return "zero";
+    else if x > 0:
+        return 1;
+    FOLD
+    return "fallback";
+FOLD
+
+hand v = foo(2);
+raise(v);
+`,
+  ],
+  ["type annotation", "deal f(x: Int):\n  return x + 1;\nFOLD\nhand x = f(1);"],
   ["arithmetic", "hand x = 1; raise(2 * 3 + 5 ** -3 / 2 - 5 % 8);"],
   ["nested arrays", "hand x = [1, [2, 3], 4];"],
   ["negation", "hand x = false;\nif !x:\n  raise(1);\nFOLD"],
@@ -77,21 +144,64 @@ const semanticChecks = [
   ],
   [
     "several nested identifiers",
-    "raise ln(sqrt(sin(cos(hypot(π, 1) + exp(5.5E2)))));",
+    "raise(ln(sqrt(sin(cos(hypot(π, 1) + exp(5.5E2))))));",
+  ],
+  ["multiple arg raise", "raise(1, 2, 3);"],
+  [
+    "annotation without returns",
+    "deal noReturn(x: Bool) -> Bool:\n  hand y = x;\nFOLD",
   ],
   ["adding varaibles", "hand x = 1;\nhand y = 2;\nraise(x + y);"],
+  [
+    "annotation with matching return",
+    "deal match(x: String) -> String:\n  return x;\nFOLD",
+  ],
+  [
+    "union annotation matching returns",
+    'deal foo(x: Int) -> Int|String:\n  if x > 0:\n    return 12;\n  FOLD\n  return "hello";\nFOLD',
+  ],
 ];
 
 const semanticErrors = [
+  [
+    "recursive function with no param type annotation",
+    "deal factorial(n) -> Int:\n  if n == 0:\n    return 1;\n  else:\n    return n * factorial(n - 1);\nFOLD\nFOLD\nhand result = factorial(5);\nraise(result);",
+    /Error: Recursive function 'factorial' requires type annotations for parameter\(s\): n/,
+  ],
+  [
+    "recursive function with no return type annotation",
+    "deal factorial(n:Int):\n  if n == 0:\n    return 1;\n  else:\n    return n * factorial(n - 1);\nFOLD\nFOLD\nhand result = factorial(5);\nraise(result);",
+    /Error: Recursive function 'factorial' requires an explicit return type annotation/,
+  ],
   [
     "function call with wrong number of arguments",
     "raise(sin(1, 2));",
     /1 argument\(s\) required but 2 passed/,
   ],
   [
+    "user function wrong arg count",
+    "deal f(a, b):\n  return a;\nFOLD\nf(1);",
+    /2 argument\(s\) required but 1 passed/,
+  ],
+  [
     "incremmenting a string",
     'hand x = "hello"; x++;',
     /Cannot bump a variable of type string/,
+  ],
+  [
+    "return annotation mismatch",
+    "deal bad(x: Int) -> String:\n  return x;\nFOLD",
+    /Return type annotation mismatch: expected string but found int/,
+  ],
+  [
+    "union annotation mismatch with bool",
+    "deal bad(x: Bool) -> Int|String:\n  return x;\nFOLD",
+    /Return type annotation mismatch: expected int\|string but found boolean/,
+  ],
+  [
+    "union annotation mismatch with float",
+    "deal bad() -> Int|String:\n  return 1.5;\nFOLD",
+    /Return type annotation mismatch: expected int\|string but found float/,
   ],
   [
     "redeclaring all in variable",
