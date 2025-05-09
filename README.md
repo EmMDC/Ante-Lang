@@ -2,8 +2,7 @@
 
 ## [Ante](https://github.com/EmMDC/Ante-lang)
 
-I recently started playing balatro, and it has become an addiction of mine. I sleep, thinking about the best combinations to get the highest scores possible. This has led me to combine my current obsession with this assignment and the creation of Ante! Ante is a playing card/poker-themed programming language designed to bring a little fun to your coding. It’s a language that combines the flexibility and power of Python and JavaScript with a poker-inspired syntax that’s meant to be playful, yet functional thus there is a mix of standard
-terminology and poker inspired terminology.
+I got hooked on Balatro, a poker-themed roguelike, and it sparked an idea: what if writing code felt like playing a strategic hand of cards? That’s how Ante was born — a statically typed, gradually checked programming language with a poker-inspired twist. Ante trades traditional syntax for something more playful: you don't declare functions, you deal them; your variables are held in your hand; and when you're done, you FOLD. But behind the fun is a real, expressive language that supports strong math features, union types, private-by-default scoping, and a flexible type system that flows from inference to dynamic fallback. It’s a little unconventional, a little chaotic — and a lot of fun to write.
 
 # [Click Here to go to the Ante Homepage](https://emmdc.github.io/)
 
@@ -249,3 +248,5 @@ Ante supports the following primitive and special types:
 - `Int | String` (or similar): Union types combining multiple types
 - `Array<Type>`: Arrays containing a specific type
 - `FunctionType([paramTypes], returnType)`: Function signatures
+
+# [Click Here to go to the Ante Homepage](https://github.com/EmMDC/Ante-Lang/blob/main/src/ante.ohm)
