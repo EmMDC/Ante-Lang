@@ -22,7 +22,8 @@ Ante {
   ReturnAnnot = "->" TypeUnion
 
   TypeUnion = Type ("|" Type)*
-  Type        = "Int" | "Float" | "Bool" | "String" | "Any"
+  Type        = "Int" | "Float" | "Bool" | "String" | "Any" 
+                | "[" Type "]" -- array
 
   IfStmt = if Exp ":" Statement+ else ":" Statement+  fold    --ifelse
          | if Exp ":" Statement+ else IfStmt               --elsif

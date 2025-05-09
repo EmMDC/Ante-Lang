@@ -1,0 +1,29 @@
+deal isPositive(n: Int):
+  return n > 0;
+FOLD
+
+deal isEven(n: Int):
+  return n % 2 == 0;
+FOLD
+
+deal describe(n: Int):
+  if isPositive(n):
+    if isEven(n):
+      raise("positive and even");
+    else:
+      raise("positive and odd");
+    FOLD
+  else:
+    raise("not positive");
+  FOLD
+FOLD
+
+deal processRange(start: Int, end: Int):
+  hand i = start;
+  while i <= end:
+    describe(i);
+    i = i + 1;
+  FOLD
+FOLD
+
+processRange(-2, 3);

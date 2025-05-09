@@ -9,12 +9,12 @@ terminology and poker inspired terminology.
 
 ## Features
 
-- Playing Card Terminology
-- Uses JavaScript and Python syntax Structure
-- Fun yet clear error Handling
-- Static Typing
-- Private by Default
-- Built in math functions
+- **Poker-Themed Syntax**: Keywords like `hand`, `deal`, `raise`, and `FOLD` bring poker flair to programming.
+- **Static and Gradual Typing**: Type inference with fallback to `any` for dynamic runtime typing.
+- **Union Types**: Functions can return multiple types, and types are inferred or annotated.
+- **Private by Default**: All variables and functions are scoped privately unless designed otherwise.
+- **Rich Math Support**: Built-in functions like `sqrt`, `sin`, `cos`, `ln`, `exp`, `abs`, and constants like `π`.
+- **Friendly Errors**: Clear and themed error messages
 
 ## Examples
 
@@ -25,7 +25,7 @@ terminology and poker inspired terminology.
 
 ```Python
 def greet(name):
-    print(f"Hello, {name}!")
+    print(f"Hello, {name}")
 greet("Alice")
 
 ```
@@ -34,13 +34,15 @@ greet("Alice")
 
 <td>
 
-```
-deal greet(name):
-    raise("Hello, {name}!");
+````
+```ante
+deal greet(name: String):
+    raise("Hello," name);
 FOLD
+
 greet("Alice");
 
-```
+````
 
 </td>
 </table>
@@ -65,9 +67,9 @@ for (let i = 0; i < 3; i++) {
 <td>
 
 ```
-for hand i in range(3):
-    for hand j in range(2):
-        raise("i = {i}, j = {j}!");
+for i in turn(1,3,1):
+    for j in turn(1,2,1):
+        raise("i =", i, ", j =", j);
     FOLD
 FOLD
 
@@ -119,7 +121,7 @@ raise(result);
 
 ```JavaScript
 const hobbies = ["reading", "cycling", "painting"];
-console.log("Hobbies:");
+console.log("Hobbies:", hobbies);
 
 
 ```
@@ -130,7 +132,7 @@ console.log("Hobbies:");
 
 ```
 hand hobbies = ["reading", "cycling", "painting"];
-raise("Hobbies:");
+raise("Hobbies:" hobbies);
 
 
 ```
@@ -144,8 +146,8 @@ raise("Hobbies:");
 <td>
 
 ```JavaScript
-const person = { name: "Alice", age: 25, hobbies: ["reading", "cycling", "painting"] };
-console.log("Person Info:");
+let person = { name: "Alice", age: 25, hobbies: ["reading", "cycling", "painting"] };
+console.log("Person Info:", person);
 
 ```
 
@@ -159,7 +161,7 @@ hand person = {
     age: 25,
     hobbies: ["reading", "cycling", "painting"]
 };
-raise("Person Info:");
+raise("Person Info:",person);
 
 
 ```
@@ -189,77 +191,61 @@ a comment
 ```
 //This is a comment
 
---
+$$
 This is
 a comment
---
+$$
 ```
 
 </td>
 </table>
 
-# Static Errors in analyzer.js
+## Error Examples
 
-- **Identifier Already Declared:**  
-  Thrown when attempting to declare an identifier that already exists.  
-  _Message:_ "Identifier [identifier] already declared"
+Ante provides informative and themed error messages to help identify issues quickly:
 
-- **Identifier Not Declared:**  
-  Thrown when referencing an identifier that hasn’t been declared.  
-  _Message:_ "Identifier [name] not declared"
+- `Identifier x not declared`: Using a variable before declaration.
+- `Identifier x already declared`: Re-declaring a variable in the same scope.
+- `Can't back out of your all in! (redeclaration of allin(const) variable)`: Attempting to reassign an `all in` (const) variable.
+- `Expected a boolean value`: A non-boolean used in a condition (e.g., `if`, `while`).
+- `Expression type mismatch: int vs boolean`: Operands or return types with incompatible types.
+- `Return type annotation mismatch: expected int|string but found boolean`: Function return does not match its declared type.
+- `Recursive function 'foo' requires an explicit return type annotation`: Recursive function lacks a return type.
+- `Recursive function 'foo' requires type annotations for parameter(s): x, y`: Recursive function parameters are missing type annotations.
+- `Step size must be non-zero`: `turn` loop step argument is zero.
+- `TurnCall requires exactly three parameters`: Invalid number of arguments in a `turn()` loop.
+- `Functions cannot appear in this context`: A function used where only values are allowed.
+- `Expected a function call on a function identifier`: Attempting to call a non-function.
+- `Break statement must be inside a loop`: Misplaced `break` outside of loops.
+- `Return statement must be inside a function`: Misplaced `return` outside of functions.
+- `Cannot subscript a value of type int`: Using array indexing on a non-indexable type.
 
-- **Expected Function Call on a Function Identifier:**  
-  Thrown when a function call is attempted on an identifier that isn’t a function.  
-  _Message:_ "Expected a function call on a function identifier"
+## Typing System
 
-- **Expected Boolean Value:**  
-  Thrown when a boolean value is expected (for example, in conditional expressions).  
-  _Message:_ "Expected a boolean value"
+Ante uses **static typing** with a **gradual typing** mechanism to balance type safety and developer flexibility. Here's how the typing pipeline works:
 
-- **Read-Only Variable Mutation:**  
-  Thrown when attempting to modify a variable that is read-only.
+1. **Type Annotations**: If a variable or function includes a type annotation, Ante uses it directly.
+2. **Type Inference**: If no annotation is found, Ante attempts to infer the type from context (e.g., from initial assignments or return values).
+3. **Fallback to `Any`**: If a type cannot be inferred, Ante assigns the `Any` type, allowing dynamic typing and deferring checks to runtime.
 
-  - For redeclaration of an "all in" (constant) variable:  
-    _Message:_ "Can't back out of your all in!(redeclaration of allin(const) variable)"
-  - Otherwise:  
-    _Message:_ "[variable name] is read only"
+### Special Rules for Recursion
 
-- **Functions in an Invalid Context:**  
-  Thrown when a function appears in a context where it is not allowed.  
-  _Message:_ "Functions cannot appear in this context"
+Recursive functions must include:
 
-- **Expression Type Mismatch:**  
-  Thrown when the types of two expressions do not match (with allowances for int/float conversion and any type).  
-  _Message:_ "Expression type mismatch: [type1] vs [type2]"
+- A **return type annotation**
+- **Type annotations for all parameters**
 
-- **Numeric Value Requirement:**  
-  Thrown when a numeric (int or float) value is expected (e.g. during an increment/decrement operation).  
-  _Message:_ "Cannot bump a variable of type [type]"
+This ensures the compiler can correctly analyze the function without infinite fallback attempts.
 
-- **Argument Count Mismatch:**  
-  Thrown when the number of arguments in a function call does not match the expected count.  
-  _Message:_ "[paramCount] argument(s) required but [argCount] passed"
+## Available Types
 
-- **Break Statement Outside Loop:**  
-  Thrown when a break statement is used outside the context of a loop.  
-  _Message:_ "Break statement must be inside a loop"
+Ante supports the following primitive and special types:
 
-- **Return Statement Outside Function:**  
-  Thrown when a return (or short return) statement is used outside of a function.  
-  _Message:_ "Return statement must be inside a function"
-
-- **Duplicate Parameter Name:**  
-  Thrown when a function declaration contains duplicate parameter names.  
-  _Message:_ "Duplicate parameter name: [name]"
-
-- **TurnCall Parameter Count Error:**  
-  Thrown when a TurnCall operation does not receive exactly three parameters.  
-  _Message:_ "TurnCall requires exactly three parameters"
-
-- **TurnCall Step Size Error:**  
-  Thrown when the step value in a TurnCall operation is zero.  
-  _Message:_ "Step size must be non-zero"
-
-- **Invalid Subscript Operation:**  
-  Thrown when attempting to subscript a value that is not a collection.  
-  _Message:_ "Cannot subscript a value of type [type]"
+- `Int`: Integer numbers
+- `Float`: Floating-point numbers
+- `Bool`: Boolean values (`true` or `false`)
+- `String`: Text values
+- `Any`: Dynamic type for runtime checking
+- `Int | String` (or similar): Union types combining multiple types
+- `Array<Type>`: Arrays containing a specific type
+- `FunctionType([paramTypes], returnType)`: Function signatures

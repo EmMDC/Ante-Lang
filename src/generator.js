@@ -1,7 +1,7 @@
 import { standardLibrary } from "./core.js";
 
 export default function generate(program) {
-  const output = [];
+  let output = [];
 
   const targetName = ((mapping) => {
     return (entity) => {
@@ -14,32 +14,41 @@ export default function generate(program) {
 
   const gen = (node) => generators?.[node?.kind]?.(node) ?? node;
 
+  //helper for function calls
+  function emitCalls(stmts) {
+    for (const stmt of stmts) {
+      const code = gen(stmt);
+      if (stmt.kind === "FunctionCall" && code) {
+        output.push(`${code};`);
+      }
+    }
+  }
+
   const generators = {
     Program(p) {
-      p.statements.forEach(gen);
+      emitCalls(p.statements);
     },
 
     IntLiteral: (node) => node.value.toString(),
     FloatLiteral: (node) => node.value.toString(),
     StringLiteral: (node) => `"${node.value}"`,
+    BoolLiteral: (node) => node.value.toString(),
 
     FunctionDeclaration(d) {
       output.push(
         `function ${gen(d.fun)}(${d.fun.params.map(gen).join(", ")}) {`
       );
-      d.fun.body.forEach(gen);
+      emitCalls(d.fun.body);
       output.push("}");
     },
 
     VariableDeclaration(d) {
-      if (d.variable.allIn) {
-        output.push(`const ${gen(d.variable)} = ${gen(d.initializer)};`);
-      } else {
-        output.push(`let ${gen(d.variable)} = ${gen(d.initializer)};`);
-      }
+      const init = gen(d.initializer);
+      const decl = d.variable.allIn ? "const" : "let";
+      output.push(`${decl} ${gen(d.variable)} = ${init};`);
     },
     Variable(v) {
-      if (standardLibrary[v.name] === v) return v.name;
+      if (v === standardLibrary.π) return "Math.PI";
       return targetName(v);
     },
 
@@ -52,12 +61,12 @@ export default function generate(program) {
     },
 
     FunctionCall(n) {
-      // Handle raise function specially
+      const callExpression = `${gen(n.callee)}(${n.args.map(gen).join(", ")})`;
       if (n.callee.name === "raise") {
         output.push(`console.log(${n.args.map(gen).join(", ")});`);
         return "";
       }
-      return `${gen(n.callee)}(${n.args.map(gen).join(", ")})`;
+      return callExpression;
     },
 
     BreakStatement() {
@@ -83,49 +92,46 @@ export default function generate(program) {
 
     WhileStatement(s) {
       output.push(`while (${gen(s.test)}) {`);
-      s.body.forEach(gen);
+      emitCalls(s.body);
       output.push("}");
     },
     IfStatement(s) {
-      output.push(`if (${gen(s.test)}) {`);
+      const start = `if (${gen(s.test)}) {`;
+      output.push(start);
       s.consequent.forEach(gen);
-
-      const generateElse = (node) => {
-        if (Array.isArray(node)) {
-          output.push("} else {");
-          node.forEach(gen);
-          output.push("}");
-        } else {
-          output.push(`} else if (${gen(node.test)}) {`);
-          node.consequent.forEach(gen);
-
-          generateElse(node.alternate);
-        }
-      };
-
-      generateElse(s.alternate);
+      if (s.alternate?.kind?.endsWith?.("IfStatement")) {
+        const altBuffer = [];
+        const oldOutput = output;
+        output = altBuffer;
+        gen(s.alternate);
+        const altLine = altBuffer.join("\n").trim();
+        output = oldOutput;
+        output.push(`} else ${altLine}`);
+      } else if (Array.isArray(s.alternate)) {
+        output.push("} else {");
+        s.alternate.forEach(gen);
+        output.push("}");
+      }
     },
     ShortIfStatement(s) {
       output.push(`if (${gen(s.test)}) {`);
-      s.consequent.forEach(gen);
+      emitCalls(s.consequent);
       output.push("}");
     },
-
     ForStatement(s) {
       output.push(`for (let ${gen(s.iterator)} of ${gen(s.collection)}) {`);
-      s.body.forEach(gen);
+      emitCalls(s.body);
       output.push("}");
     },
 
     ForTurnStatement(s) {
       const varName = gen(s.iterator);
-      const start = gen(s.lower);
-      const condition = `${varName} ${s.direction} ${gen(s.upper)}`;
-      const step = gen(s.step);
       output.push(
-        `for (let ${varName} = ${start}; ${condition}; ${varName} += ${step}) {`
+        `for (let ${varName} = ${gen(s.lower)}; ${varName} ${s.direction} ${gen(
+          s.upper
+        )}; ${varName} += ${gen(s.step)}) {`
       );
-      s.body.forEach(gen);
+      emitCalls(s.body);
       output.push("}");
     },
 
@@ -135,11 +141,6 @@ export default function generate(program) {
     BinaryExpression(e) {
       if (e.op === "hypot")
         return `Math.hypot(${gen(e.left)}, ${gen(e.right)})`;
-
-      if (e.op === "%%") return `Math.floor(${gen(e.left)} / ${gen(e.right)})`;
-
-      if (e.op === "%") return `(${gen(e.left)} % ${gen(e.right)})`;
-
       const op =
         { "==": "===", "!=": "!==", or: "||", and: "&&" }[e.op] ?? e.op;
       return `(${gen(e.left)} ${op} ${gen(e.right)})`;
@@ -147,7 +148,6 @@ export default function generate(program) {
 
     UnaryExpression(e) {
       const operand = gen(e.operand);
-      // No need to handle raise here since it's handled in FunctionCall
       if (e.op === "random")
         return `((a=>a[~~(Math.random()*a.length)])(${operand}))`;
       if (e.op === "codepoints")
@@ -171,7 +171,6 @@ export default function generate(program) {
       const members = e.members.map((m) => `${m.key}: ${gen(m.value)}`);
       return `{ ${members.join(", ")} }`;
     },
-    // Removing the Raise function since we handle it in FunctionCall now
   };
   gen(program);
   return output.join("\n");

@@ -48,6 +48,7 @@ raise(w);
     "factorial function",
     "deal factorial(n: Int) -> Int:\n  if n == 0:\n    return 1;\n  else:\n    return n * factorial(n - 1);\nFOLD\nFOLD\nhand result = factorial(5);\nraise(result);",
   ],
+
   [
     "return inside a while loop",
     `
@@ -173,6 +174,20 @@ const semanticErrors = [
     "deal factorial(n:Int):\n  if n == 0:\n    return 1;\n  else:\n    return n * factorial(n - 1);\nFOLD\nFOLD\nhand result = factorial(5);\nraise(result);",
     /Error: Recursive function 'factorial' requires an explicit return type annotation/,
   ],
+  [
+    "type mismatch in addition with line info",
+    `hand x = 1;
+   hand y = false;
+   hand z = x + y;`,
+    /Line \d+, col \d+:[\s\S]*Expression type mismatch: int vs boolean/,
+  ],
+  [
+    "invalid bump with location",
+    `hand x = false;
+   x++;`,
+    /Line \d+, col \d+:[\s\S]*Cannot bump a variable of type boolean/,
+  ],
+
   [
     "function call with wrong number of arguments",
     "raise(sin(1, 2));",

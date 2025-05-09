@@ -1,0 +1,64 @@
+// Computes various properties of a list of poker hands
+
+deal fill(n: Int, val: String) -> [String]:
+  hand arr = [];
+  hand i = 0;
+  for z in turn(0, n, 1):
+    arr[i] = val;
+    i++;
+  FOLD
+  return arr;
+FOLD
+
+
+deal score(x: [Int]) -> Int:
+  hand total = 0;
+  for card in x:
+    total = total + card;
+  FOLD
+  return total;
+FOLD
+
+deal classify(score: Int) -> String:
+  if score >= 40:
+    return "High Roller";
+  else if score >= 25:
+    return "Solid";
+  else:
+    return "Low Stakes";
+  FOLD
+FOLD
+
+deal simulateGames(n: Int) -> [String]:
+  hand results = fill(n, "");
+  hand i = 0;
+  for iter in turn(0, n, 1):
+    hand h = [random([1,2,3,4,5,6,7,8,9,10]), random([1,2,3,4,5,6,7,8,9,10]), random([1,2,3,4,5,6,7,8,9,10]), random([1,2,3,4,5,6,7,8,9,10]), random([1,2,3,4,5,6,7,8,9,10])];
+    hand s = score(h);
+    hand label = classify(s);
+    results[i] = label;
+    i++;
+  FOLD
+  return results;
+FOLD
+
+deal countLabels(labels: [String]):
+  hand high = 0;
+  hand solid = 0;
+  hand low = 0;
+  for label in labels:
+    if label == "High Roller":
+      high++;
+    else if label == "Solid":
+      solid++;
+    else:
+      low++;
+    FOLD
+  FOLD
+  return {High: high, Solid: solid, Low: low};
+FOLD
+
+hand trials = 100;
+hand outcomes = simulateGames(trials);
+hand summary = countLabels(outcomes);
+raise(summary);

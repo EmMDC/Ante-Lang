@@ -1,3 +1,6 @@
+hand z = 2+2;
+
+
 deal foo(x:Int) -> Int|String:
     if x > 0:
         return 12;
@@ -10,3 +13,4 @@ hand shouldBeString = foo(1);
 raise(shouldBeInt);
 raise(shouldBeString);
 raise(shouldBeInt + shouldBeString);
+

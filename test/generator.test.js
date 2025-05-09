@@ -17,13 +17,29 @@ const fixtures = [
       console.log(0);
     `,
   },
+
   {
     name: "mathematical expression",
     source: `raise((1 + 2 * 3 - 1)/2);\nraise(6%%2%2);`,
     expected: dedent`
-      console.log((((1 + (2 * 3)) - 1) / 2));\nconsole.log((Math.floor(6 / 2) % 2));
+      console.log(3);\nconsole.log(1);
     `,
   },
+  {
+    name: "bool lit",
+    source: `hand x = 2 > 2;`,
+    expected: dedent`
+      let x_1 = false;
+    `,
+  },
+  {
+    name: "floor and modulo",
+    source: `raise(5 %% 2);\nraise(11%3);`,
+    expected: dedent`
+      console.log(2);\nconsole.log(2);
+    `,
+  },
+
   {
     name: "variable declaration",
     source: `
@@ -106,7 +122,7 @@ const fixtures = [
     expected: dedent`
       let x_1 = 0;
       while ((x_1 < 3)) {
-        x_1 = (x_1 + π);
+        x_1 = (x_1 + Math.PI);
         x_1--;
         x_1++;
         break;
@@ -114,6 +130,7 @@ const fixtures = [
       console.log(x_1);
     `,
   },
+
   {
     name: "function declaration",
     source: `
@@ -121,7 +138,9 @@ const fixtures = [
         return x;
       FOLD
       hand y = f(5);
+      all in z = f(4);
       raise(y);
+      raise(f(3));
       deal check():
         return;
       FOLD
@@ -131,8 +150,10 @@ const fixtures = [
         return x_2;
       }
       let y_3 = f_1(5);
+      const z_4 = f_1(4);
       console.log(y_3);
-      function check_4() {
+      console.log(f_1(3));
+      function check_6() {
         return;
       }
     `,
@@ -278,6 +299,88 @@ const fixtures = [
     expected: dedent`
       let h_1 = Math.hypot(3, 4);
       console.log(h_1);
+    `,
+  },
+  {
+    name: "function call in initializer",
+    source: `
+      deal f():
+        raise("hello");
+      FOLD
+      hand x = f();
+    `,
+    expected: dedent`
+      function f_1() {
+        console.log("hello");
+      }
+      let x_3 = f_1();
+    `,
+  },
+  {
+    name: "standalone function call statement",
+    source: `
+    deal greet():
+      raise("hey");
+    FOLD
+
+    // standalone call with no assignment or raise
+    greet();
+  `,
+    expected: dedent`
+    function greet_1() {
+      console.log("hey");
+    }
+    greet_1();
+  `,
+  },
+  {
+    name: "function call inside function body",
+    source: `
+      deal t():
+        raise(1);
+      FOLD
+      deal f():
+        t();
+      FOLD
+    `,
+    expected: dedent`
+      function t_1() {
+        console.log(1);
+      }
+      function f_3() {
+        t_1();
+      }
+    `,
+  },
+  {
+    name: "function call inside while",
+    source: `
+      deal t():
+        raise(1);
+      FOLD
+      deal x():
+        raise(2+2);
+      FOLD
+      while true:
+        t();
+        if 2 > 1:
+          x();
+        FOLD
+      FOLD
+    `,
+    expected: dedent`
+      function t_1() {
+        console.log(1);
+      }
+      function x_3() {
+        console.log(4);
+      }
+      while (true) {
+        t_1();
+        if (true) {
+          x_3();
+        }
+      }
     `,
   },
 ];
