@@ -11,9 +11,10 @@ export function variable(
   name,
   mutable = false,
   type = anyType,
-  isPrivate = true
+  isPrivate = true,
+  value = undefined
 ) {
-  return { kind: "Variable", name, mutable, type, private: isPrivate };
+  return { kind: "Variable", name, mutable, type, private: isPrivate, value };
 }
 
 export const booleanType = "boolean";
@@ -22,6 +23,7 @@ export const floatType = "float";
 export const stringType = "string";
 export const anyType = "any";
 
+// Function definitions
 export function functionDeclaration(fun) {
   return { kind: "FunctionDeclaration", fun };
 }
@@ -34,6 +36,7 @@ export function intrinsicFunction(name, type) {
   return { kind: "Function", name, type, intrinsic: true };
 }
 
+// Type constructors (for internal use)
 export function arrayType(baseType) {
   return { kind: "ArrayType", baseType };
 }
@@ -133,11 +136,11 @@ export function emptyArray(elementType = anyType) {
 }
 
 export function memberExpression(object, op, field) {
-  return { kind: "MemberExpression", object, op, field, type: field.type };
+  return { kind: "MemberExpression", object, op, field };
 }
 
 export function functionCall(callee, args) {
-  // Special handling for raise after design change
+  // Special handling for raise - always treat as a function call
   if (callee.name === "raise") {
     return { kind: "FunctionCall", callee, args, type: callee.type.returnType };
   }

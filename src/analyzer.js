@@ -27,6 +27,7 @@ export default function analyze(match) {
   // Create a new context with the standard library from core
   let context = new Context({ locals: core.standardLibrary });
 
+  // Helper to check a condition; throws an error if condition fails
   function check(condition, message, at) {
     if (!condition) {
       const prefix = at.at?.source?.getLineAndColumnMessage
@@ -52,7 +53,6 @@ export default function analyze(match) {
       at
     );
   }
-  //used in function declaration
   function findAllReturns(statements) {
     const returns = [];
     for (const stmt of statements) {
@@ -97,24 +97,16 @@ export default function analyze(match) {
     }
   }
   function checkSameExp(exp1, exp2, at) {
-    const bothNumeric =
-      [core.intType, core.floatType].includes(exp1.type) &&
-      [core.intType, core.floatType].includes(exp2.type);
-
-    const message = `Expression type mismatch: ${exp1.type} vs ${exp2.type}`;
-    if (
-      !(
-        exp1.type === exp2.type ||
-        bothNumeric ||
+    check(
+      exp1.type === exp2.type ||
+        (exp1.type === core.intType && exp2.type === core.floatType) ||
+        (exp1.type === core.floatType && exp2.type === core.intType) ||
         exp1.type === core.anyType ||
-        exp2.type === core.anyType
-      )
-    ) {
-      const prefix = at.source?.getLineAndColumnMessage?.();
-      throw new Error(`${prefix}${message}`);
-    }
+        exp2.type === core.anyType,
+      `Expression type mismatch: ${exp1.type} vs ${exp2.type}`,
+      at
+    );
   }
-
   function checkIsNum(entity, at, customMsg) {
     check(
       entity.type === core.intType || entity.type === core.floatType,
@@ -124,13 +116,11 @@ export default function analyze(match) {
   }
 
   function promoteType(type1, type2) {
-    if (type1.type === type2.type) return type1.type;
+    if (type1 === type2) return type1;
     if (
-      (type1.type === core.intType && type2.type === core.floatType) ||
-      (type1.type === core.floatType && type2.type === core.intType)
+      (type1 === core.intType && type2 === core.floatType) ||
+      (type1 === core.floatType && type2 === core.intType)
     ) {
-      type1.value = parseFloat(type1.value);
-      type2.value = parseFloat(type2.value);
       return core.floatType;
     }
   }
@@ -147,12 +137,15 @@ export default function analyze(match) {
     );
   }
 
+  // Flatten a mix of primitive types and UnionType objects into a flat array of unique types
   function flattenUnion(types) {
     const seen = new Set();
     function recur(t) {
+      // If this is a UnionType, recurse into its .types array
       if (t && t.kind === "UnionType" && Array.isArray(t.types)) {
         t.types.forEach(recur);
       } else {
+        // Primitive types are just strings (e.g. "int", "string")
         seen.add(t);
       }
     }
@@ -176,16 +169,18 @@ export default function analyze(match) {
       VarDecl(_hand, id, _eq, init, _semi) {
         checkNotAlreadyDeclared(id, { at: id });
         const initializer = init.analyze();
+        const initValue =
+          initializer.kind === "ObjectExpression" ? initializer : undefined;
         const variable = core.variable(
           id.sourceString,
           true,
           initializer.type,
-          true
+          true,
+          initValue
         );
         context.add(id.sourceString, variable);
         return core.variableDeclaration(variable, initializer);
       },
-
       //same as const variable declaration
       AllInVarDecl(_all_in, id, _eq, init, _semi) {
         checkNotAlreadyDeclared(id, { at: id });
@@ -194,14 +189,15 @@ export default function analyze(match) {
           id.sourceString,
           false,
           initializer.type,
-          true
+          true,
+          initializer.value
         );
-
+        // Mark the variable as an "all in" variable.
         variable.allIn = true;
         context.add(id.sourceString, variable);
         return core.variableDeclaration(variable, initializer);
       },
-
+      // --- In analyzer.js, replace your existing FunDecl semantic action with the block below. ---
       FunDecl(
         _deal,
         id,
@@ -211,15 +207,19 @@ export default function analyze(match) {
         statementsNode,
         _fold
       ) {
+        // 1. Ensure function isn’t already declared
         checkNotAlreadyDeclared(id, { at: id });
 
+        // 2. Parse parameters
         const parameters = paramsNode.analyze();
 
+        // 3. Pre‐analyze optional return annotation
         const annotatedType =
           returnAnnotIter.children.length > 0
             ? returnAnnotIter.children[0].analyze()
             : null;
 
+        // 4. Create the Function entity early (for recursion) and assign its type
         const fun = core.fun(id.sourceString, parameters, null);
         fun.type = core.functionType(
           parameters.map((p) => p.type),
@@ -227,12 +227,13 @@ export default function analyze(match) {
         );
         context.add(id.sourceString, fun);
 
+        // 5. Enter new child context for body
         const parentContext = context;
         funDepth++;
         context = parentContext.newChildContext();
         parameters.forEach((p) => context.add(p.name, p));
 
-        // no dupes
+        // Prevent duplicate param names
         const seen = new Set();
         for (const param of parameters) {
           if (seen.has(param.name)) {
@@ -242,10 +243,11 @@ export default function analyze(match) {
         }
 
         try {
+          // 6. Analyze the function body statements
           const body = statementsNode.children.map((s) => s.analyze());
           fun.body = body;
 
-          // check for recursion funcs
+          // 7. NEW: detect recursion by scanning the raw body text
           const bodyText = statementsNode.sourceString;
           const isRecursive = bodyText.includes(id.sourceString + "(");
           if (isRecursive) {
@@ -268,11 +270,12 @@ export default function analyze(match) {
             }
           }
 
+          // 8. Collect all returned expressions
           const returnExpressions = findAllReturns(body).map(
             (s) => s.expression
           );
 
-          // enforcing the return type annotation
+          // 9. Enforce return‐type annotation if given
           if (annotatedType) {
             const allowed = flattenUnion([annotatedType]);
             returnExpressions.forEach((expr) => {
@@ -284,7 +287,9 @@ export default function analyze(match) {
                 );
               }
             });
-            // try inference if no annotation
+            // fun.type.returnType remains the annotatedType
+
+            // 10. Otherwise, fall back to inference
           } else if (returnExpressions.length > 0) {
             const allTypes = returnExpressions.map((e) => e.type);
             const uniqueTypes = [...new Set(allTypes)];
@@ -301,18 +306,21 @@ export default function analyze(match) {
             fun.type.returnType = inferredType;
           }
         } finally {
+          // 11. Exit function scope
           funDepth--;
           context = parentContext;
         }
 
+        // 12. Build and return the function declaration node
         return core.functionDeclaration(fun);
       },
 
+      // Unwrap parameter list manually
       Params(_open, list, _close) {
         return list.asIteration().children.map((p) => p.analyze());
       },
 
-      // param with optional type
+      // Parameter with optional type annotation
       Param(id, typeAnnotIter) {
         const paramType =
           typeAnnotIter.children.length > 0
@@ -321,10 +329,12 @@ export default function analyze(match) {
         return core.variable(id.sourceString, false, paramType);
       },
 
+      // ReturnAnnot holds a Type node
       ReturnAnnot(_arrow, typeNode) {
         return typeNode.analyze();
       },
 
+      // TypeAnnot unwraps to the Type node
       TypeAnnot(_colon, typeNode) {
         return typeNode.analyze();
       },
@@ -338,6 +348,7 @@ export default function analyze(match) {
         return unique.length === 1 ? unique[0] : core.unionType(unique);
       },
 
+      // Provide a semantic action for Type to avoid needing a generic _terminal
       Type(typeToken) {
         switch (typeToken.sourceString) {
           case "Int":
@@ -356,13 +367,7 @@ export default function analyze(match) {
       Statement_bump(exp, op, _semi) {
         // Increment or decrement operation on a mutable target
         const target = exp.analyze();
-        const prefix = op.source?.getLineAndColumnMessage?.();
-        checkIsNum(
-          target,
-          op,
-          `${prefix}Cannot bump a variable of type ${target.type}`
-        );
-
+        checkIsNum(target, op, `Cannot bump a variable of type ${target.type}`);
         checkIsMutable(target, op);
         return op.sourceString === "++"
           ? core.increment(target)
@@ -431,6 +436,7 @@ export default function analyze(match) {
         return core.whileStatement(condition, body);
       },
       LoopStmt_range(_for, id, _in, turnCall, _colon, statements, _fold) {
+        // Handle a for-range loop, setting up a new child context for loop variable
         const iterator = core.variable(id.sourceString, true);
         const parentContext = context;
         context = parentContext.newChildContext();
@@ -515,7 +521,7 @@ export default function analyze(match) {
         checkNotFunction(left, op);
         checkNotFunction(right, op);
         checkSameExp(left, right, op);
-        const resultType = promoteType(left, right);
+        const resultType = promoteType(left.type, right.type);
         return core.binary(op.sourceString, left, right, resultType);
       },
       Exp_mul_multiply(exp, op, exp2) {
@@ -524,7 +530,8 @@ export default function analyze(match) {
         checkNotFunction(left, op);
         checkNotFunction(right, op);
         checkSameExp(left, right, op);
-        const resultType = promoteType(left, right);
+        const resultType = promoteType(left.type, right.type);
+
         switch (op.sourceString) {
           case "%%":
             return core.binary("%%", left, right, resultType);
@@ -548,7 +555,7 @@ export default function analyze(match) {
         checkNotFunction(left, _op);
         checkNotFunction(right, _op);
         checkSameExp(left, right, _op);
-        const resultType = promoteType(left, right);
+        const resultType = promoteType(left.type, right.type);
         return core.binary("**", left, right, resultType);
       },
       Exp_unary_unary(op, exp) {
@@ -559,6 +566,7 @@ export default function analyze(match) {
         const callee = exp.analyze();
         const args = list.asIteration().children.map((x) => x.analyze());
         if (callee.name === "raise") {
+          // No argument count check for raise
           checkIsFunction(callee, _open);
           return core.functionCall(callee, args);
         }
@@ -599,9 +607,22 @@ export default function analyze(match) {
         return core.subscript(arrayEntity, index.analyze());
       },
       Exp_postfix_member(exp, _dot, id) {
-        return core.memberExpression(exp.analyze(), _dot.sourceString, {
+        const object = exp.analyze();
+        let memberType = core.anyType;
+
+        // if  stored  AST of an object‐literal in object.value
+        if (object.value && object.value.kind === "ObjectExpression") {
+          const m = object.value.members.find((m) => m.key === id.sourceString);
+          if (m) memberType = m.value.type;
+        }
+
+        // build a proper MemberExpression with that type
+        const me = core.memberExpression(object, _dot.sourceString, {
           name: id.sourceString,
+          type: memberType,
         });
+        me.type = memberType;
+        return me;
       },
       Exp_primary_arrayexp(_open, list, _close) {
         const children = list.asIteration().children;
